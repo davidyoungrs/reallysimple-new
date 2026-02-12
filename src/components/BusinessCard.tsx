@@ -1,6 +1,6 @@
 import type { CardData } from '../types';
 import { SocialLinks } from './SocialLinks';
-import { Download, Wallet, Loader2 } from 'lucide-react';
+import { Download, Wallet, Loader2, Phone } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { downloadVCard } from '../utils/vcard';
 import { useState } from 'react';
@@ -23,6 +23,7 @@ export function BusinessCard({ data }: BusinessCardProps) {
         gradientColor,
         backgroundType,
         showPhoto,
+        phoneNumbers,
         socialLinks
     } = data;
     const [loading, setLoading] = useState(false);
@@ -73,7 +74,10 @@ export function BusinessCard({ data }: BusinessCardProps) {
     };
 
     return (
-        <div className="relative w-full max-w-md mx-auto aspect-[9/16] sm:aspect-[4/5] overflow-hidden rounded-3xl shadow-2xl transition-all duration-500 hover:shadow-3xl">
+        <div
+            className="relative w-full max-w-md mx-auto aspect-[9/16] sm:aspect-[4/5] overflow-hidden rounded-3xl shadow-2xl transition-all duration-500 hover:shadow-3xl"
+            style={{ fontFamily: data.font || 'Inter' }}
+        >
             {/* Background with dynamic gradient based on theme color */}
             {/* Background with dynamic gradient based on theme color */}
             <div
@@ -132,6 +136,27 @@ export function BusinessCard({ data }: BusinessCardProps) {
                 <div className="w-full">
                     <SocialLinks links={socialLinks} className="mb-8" />
                 </div>
+
+                {/* Phone Numbers */}
+                {(phoneNumbers || []).length > 0 && (
+                    <div className="w-full flex flex-col gap-3 mb-8">
+                        {phoneNumbers?.map((phone) => (
+                            <a
+                                key={phone.id}
+                                href={`tel:${phone.number}`}
+                                className="flex items-center gap-4 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 p-4 rounded-2xl transition-all hover:scale-[1.02] group"
+                            >
+                                <div className="bg-white/20 p-2.5 rounded-full group-hover:bg-white/30 transition-colors">
+                                    <Phone className="w-5 h-5 text-white" />
+                                </div>
+                                <div className="flex flex-col text-left">
+                                    <span className="text-xs text-white/60 font-medium uppercase tracking-wider">{phone.label}</span>
+                                    <span className="text-white font-medium text-lg">{phone.number}</span>
+                                </div>
+                            </a>
+                        ))}
+                    </div>
+                )}
 
                 {/* Actions & QR Code */}
                 <div className="w-full space-y-4 mb-4">

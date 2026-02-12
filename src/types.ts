@@ -1,5 +1,11 @@
 export type SocialPlatform = 'linkedin' | 'twitter' | 'github' | 'website' | 'email' | 'phone' | 'instagram' | 'youtube' | 'tiktok' | 'pinterest' | 'spotify' | 'soundcloud' | 'bandcamp' | 'bandlab' | 'tidal' | 'deezer' | 'pandora' | 'iheartradio' | 'amazonmusic' | 'custom';
 
+export interface PhoneNumber {
+    id: string;
+    label: string;
+    number: string;
+}
+
 export interface SocialLink {
     id: string;
     platform: SocialPlatform;
@@ -19,6 +25,8 @@ export interface CardData {
     gradientColor?: string;
     backgroundType: 'solid' | 'gradient';
     showPhoto: boolean;
+    font: string;
+    phoneNumbers: PhoneNumber[];
     socialLinks: SocialLink[];
 }
 
@@ -32,6 +40,11 @@ export const initialCardData: CardData = {
     gradientColor: '#000000',
     backgroundType: 'gradient',
     showPhoto: true,
+    font: 'Inter',
+    phoneNumbers: [
+        { id: '1', label: 'Office', number: '+1 (555) 123-4567' },
+        { id: '2', label: 'Mobile', number: '+1 (555) 987-6543' }
+    ],
     socialLinks: [
         { id: '1', platform: 'email', url: 'mailto:david@example.com', label: 'Email' },
         { id: '2', platform: 'website', url: 'https://reallysimpleapps.com', label: 'Website' },

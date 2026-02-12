@@ -77,7 +77,7 @@ function App() {
       </div>
 
       {/* Preview Side */}
-      <div className="flex-1 flex flex-col items-center justify-start md:justify-center p-4 md:p-8 bg-gray-50 h-[50vh] md:h-screen relative overflow-y-auto overflow-x-hidden">
+      <div className="flex-1 flex flex-col items-center justify-start p-4 md:p-8 bg-gray-50 h-[50vh] md:h-screen relative overflow-y-auto overflow-x-hidden">
         <div className="fixed inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-50 pointer-events-none"></div>
 
         <div className="w-full max-w-md my-auto z-10 py-8 scale-90 md:scale-100 transition-transform origin-top md:origin-center">
