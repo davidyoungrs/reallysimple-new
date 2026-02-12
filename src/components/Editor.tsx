@@ -52,6 +52,7 @@ export function Editor({ data, onChange }: EditorProps) {
     return (
         <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8 space-y-8 h-full overflow-y-auto">
             <div>
+                <img src="/logo.png" alt="Really Simple Apps" className="h-8 mb-4" />
                 <h2 className="text-2xl font-bold text-gray-900 mb-1">{t('Edit Profile')}</h2>
                 <p className="text-gray-500 text-sm">{t('Update Info')}</p>
             </div>
@@ -92,11 +93,21 @@ export function Editor({ data, onChange }: EditorProps) {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('Bio')}</label>
+                        <div className="flex justify-between items-center mb-1">
+                            <label className="block text-sm font-medium text-gray-700">{t('Bio')}</label>
+                            <span className={`text-xs ${data.bio?.length > 150 ? 'text-red-500' : 'text-gray-400'}`}>
+                                {data.bio?.length || 0} / 150
+                            </span>
+                        </div>
                         <textarea
                             value={data.bio}
-                            onChange={(e) => handleChange('bio', e.target.value)}
+                            onChange={(e) => {
+                                if (e.target.value.length <= 150) {
+                                    handleChange('bio', e.target.value);
+                                }
+                            }}
                             rows={3}
+                            maxLength={150}
                             className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none"
                         />
                     </div>
