@@ -75,7 +75,7 @@ export function BusinessCard({ data }: BusinessCardProps) {
 
     return (
         <div
-            className="relative w-full max-w-md mx-auto aspect-[9/16] sm:aspect-[4/5] overflow-hidden rounded-3xl shadow-2xl transition-all duration-500 hover:shadow-3xl"
+            className="relative w-full max-w-md mx-auto min-h-[600px] overflow-hidden rounded-3xl shadow-2xl transition-all duration-500 hover:shadow-3xl"
             style={{ fontFamily: data.font || 'Inter' }}
         >
             {/* Background with dynamic gradient based on theme color */}
@@ -110,11 +110,16 @@ export function BusinessCard({ data }: BusinessCardProps) {
                     {showPhoto && (
                         <div className="relative group">
                             <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 to-violet-500 rounded-full blur opacity-25 group-hover:opacity-75 transition duration-500"></div>
-                            <img
-                                src={avatarUrl}
-                                alt={fullName}
-                                className="relative w-32 h-32 rounded-full border-4 border-white/10 shadow-xl object-cover"
-                            />
+                            <div className="relative w-32 h-32 rounded-full border-4 border-white/10 shadow-xl overflow-hidden bg-white/5">
+                                <img
+                                    src={avatarUrl}
+                                    alt={fullName}
+                                    className="w-full h-full object-cover transition-transform will-change-transform"
+                                    style={{
+                                        transform: `scale(${data.avatarScale || 1}) translate(${data.avatarPosition?.x || 0}px, ${data.avatarPosition?.y || 0}px)`
+                                    }}
+                                />
+                            </div>
                         </div>
                     )}
 
@@ -187,6 +192,6 @@ export function BusinessCard({ data }: BusinessCardProps) {
                 </div>
 
             </div>
-        </div>
+        </div >
     );
 }

@@ -25,6 +25,8 @@ export interface CardData {
     gradientColor?: string;
     backgroundType: 'solid' | 'gradient';
     showPhoto: boolean;
+    avatarScale?: number;
+    avatarPosition?: { x: number; y: number };
     font: string;
     phoneNumbers: PhoneNumber[];
     socialLinks: SocialLink[];
@@ -40,6 +42,8 @@ export const initialCardData: CardData = {
     gradientColor: '#000000',
     backgroundType: 'gradient',
     showPhoto: true,
+    avatarScale: 1,
+    avatarPosition: { x: 0, y: 0 },
     font: 'Inter',
     phoneNumbers: [
         { id: '1', label: 'Office', number: '+1 (555) 123-4567' },

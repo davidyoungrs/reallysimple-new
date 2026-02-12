@@ -1,10 +1,70 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { initialCardData, type CardData } from './types';
 import { BusinessCard } from './components/BusinessCard';
 import { Editor } from './components/Editor';
 import { loadFromUrl, saveToUrl } from './utils/urlState';
 import { useTranslation } from 'react-i18next';
 import { Globe, ChevronUp, ChevronDown } from 'lucide-react';
+
+
+// Helper component to scale content to fit container
+const ScaleToFit = ({ children }: { children: React.ReactNode }) => {
+  const [scale, setScale] = useState(1);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const contentRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const calculateScale = () => {
+      if (!containerRef.current || !contentRef.current) return;
+
+      const container = containerRef.current;
+      const content = contentRef.current;
+
+      // add some padding
+      const padding = 40;
+      const availableWidth = container.clientWidth - padding;
+      const availableHeight = container.clientHeight - padding;
+
+      const contentWidth = content.scrollWidth;
+      const contentHeight = content.scrollHeight;
+
+      if (contentWidth === 0 || contentHeight === 0) return;
+
+      const scaleX = availableWidth / contentWidth;
+      const scaleY = availableHeight / contentHeight;
+
+      // Scale down if too big, but max scale is 1 (don't scale up pixelated)
+      const newScale = Math.min(scaleX, scaleY, 1);
+
+      setScale(newScale);
+    };
+
+    // Initial calculation
+    calculateScale();
+
+    // Observe resizing
+    const observer = new ResizeObserver(calculateScale);
+    if (containerRef.current) observer.observe(containerRef.current);
+    if (contentRef.current) observer.observe(contentRef.current);
+
+    return () => observer.disconnect();
+  }, [children]); // Re-calculate when children change
+
+  return (
+    <div ref={containerRef} className="w-full h-full flex items-center justify-center overflow-hidden">
+      <div
+        ref={contentRef}
+        style={{
+          transform: `scale(${scale})`,
+          transition: 'transform 0.1s ease-out'
+        }}
+        className="origin-center"
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
 
 function App() {
   const { t, i18n } = useTranslation();
@@ -80,9 +140,9 @@ function App() {
       <div className="flex-1 flex flex-col items-center justify-start p-4 md:p-8 bg-gray-50 h-[50vh] md:h-screen relative overflow-y-auto overflow-x-hidden">
         <div className="fixed inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-50 pointer-events-none"></div>
 
-        <div className="w-full max-w-md my-auto z-10 py-8 scale-90 md:scale-100 transition-transform origin-top md:origin-center">
+        <ScaleToFit>
           <BusinessCard data={data} />
-        </div>
+        </ScaleToFit>
 
         <div className="mt-8 text-center text-gray-400 text-sm hidden md:block shrink-0 pb-8">
           {t('Preview')}

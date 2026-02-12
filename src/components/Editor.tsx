@@ -497,33 +497,104 @@ export function Editor({ data, onChange }: EditorProps) {
                     </div>
 
                     {data.showPhoto && (
-                        <div className="flex items-center gap-4">
-                            <div className="relative w-16 h-16 rounded-full overflow-hidden border border-gray-200 bg-gray-50">
-                                <img src={data.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-4">
+                                <div className="relative w-16 h-16 rounded-full overflow-hidden border border-gray-200 bg-gray-50">
+                                    <img
+                                        src={data.avatarUrl}
+                                        alt="Avatar"
+                                        className="w-full h-full object-cover"
+                                        style={{
+                                            transform: `scale(${data.avatarScale || 1}) translate(${data.avatarPosition?.x || 0}px, ${data.avatarPosition?.y || 0}px)`
+                                        }}
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-xs text-gray-500 mb-1">{t('Image URL or Upload')}</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={data.avatarUrl}
+                                            onChange={(e) => handleChange('avatarUrl', e.target.value)}
+                                            className="flex-1 px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                                            placeholder="https://..."
+                                        />
+                                        <button
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 transition-colors"
+                                        >
+                                            <Upload className="w-4 h-4" />
+                                        </button>
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={(e) => handleFileChange(e, 'avatarUrl')}
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            <div className="flex-1">
-                                <label className="block text-xs text-gray-500 mb-1">{t('Image URL or Upload')}</label>
-                                <div className="flex gap-2">
+
+                            {/* Scale and Position Controls */}
+                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-4">
+                                {/* Scale Control */}
+                                <div>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <label className="text-xs font-medium text-gray-700">{t('Zoom / Scale')}</label>
+                                        <span className="text-xs text-gray-500">{data.avatarScale || 1}x</span>
+                                    </div>
                                     <input
-                                        type="text"
-                                        value={data.avatarUrl}
-                                        onChange={(e) => handleChange('avatarUrl', e.target.value)}
-                                        className="flex-1 px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                                        placeholder="https://..."
+                                        type="range"
+                                        min="0.5"
+                                        max="3"
+                                        step="0.1"
+                                        value={data.avatarScale || 1}
+                                        onChange={(e) => handleChange('avatarScale', parseFloat(e.target.value))}
+                                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                                     />
-                                    <button
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 transition-colors"
-                                    >
-                                        <Upload className="w-4 h-4" />
-                                    </button>
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        accept="image/*"
-                                        className="hidden"
-                                        onChange={(e) => handleFileChange(e, 'avatarUrl')}
-                                    />
+                                </div>
+
+                                {/* Position Controls */}
+                                <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="text-xs font-medium text-gray-700">{t('Position Adjustment')}</label>
+                                        <button
+                                            onClick={() => {
+                                                handleChange('avatarScale', 1);
+                                                handleChange('avatarPosition', { x: 0, y: 0 });
+                                            }}
+                                            className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                                        >
+                                            {t('Reset')}
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[10px] text-gray-500 block mb-1 uppercase tracking-wider">{t('Horizontal (X)')}</label>
+                                            <input
+                                                type="range"
+                                                min="-100"
+                                                max="100"
+                                                step="1"
+                                                value={data.avatarPosition?.x || 0}
+                                                onChange={(e) => handleChange('avatarPosition', { ...(data.avatarPosition || { x: 0, y: 0 }), x: parseInt(e.target.value) })}
+                                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] text-gray-500 block mb-1 uppercase tracking-wider">{t('Vertical (Y)')}</label>
+                                            <input
+                                                type="range"
+                                                min="-100"
+                                                max="100"
+                                                step="1"
+                                                value={data.avatarPosition?.y || 0}
+                                                onChange={(e) => handleChange('avatarPosition', { ...(data.avatarPosition || { x: 0, y: 0 }), y: parseInt(e.target.value) })}
+                                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
