@@ -5,8 +5,9 @@ import { BusinessCard } from './BusinessCard';
 import { Editor } from './Editor';
 import { loadFromUrl, saveToUrl } from '../utils/urlState';
 import { useTranslation } from 'react-i18next';
-import { Globe, ChevronUp, ChevronDown, ArrowLeft } from 'lucide-react';
+import { ChevronUp, ChevronDown, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { LanguageSelector } from './LanguageSelector';
 
 
 // Helper component to scale content to fit container
@@ -69,7 +70,7 @@ const ScaleToFit = ({ children }: { children: React.ReactNode }) => {
 };
 
 export function CardBuilder() {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const [isEditorOpen, setIsEditorOpen] = useState(true);
 
     // Initialize state from URL or default
@@ -86,10 +87,6 @@ export function CardBuilder() {
         return () => clearTimeout(timer);
     }, [data]);
 
-    const changeLanguage = (lng: string) => {
-        i18n.changeLanguage(lng);
-    };
-
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col md:flex-row relative overflow-hidden">
 
@@ -103,21 +100,7 @@ export function CardBuilder() {
 
             {/* Right Side: User Profile & Language Switcher */}
             <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
-                <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md p-2 rounded-lg shadow-md border border-gray-200">
-                    <Globe className="w-4 h-4 text-gray-500" />
-                    <select
-                        onChange={(e) => changeLanguage(e.target.value)}
-                        value={i18n.language}
-                        className="bg-transparent text-sm border-none focus:ring-0 cursor-pointer text-gray-700 font-medium"
-                    >
-                        <option value="en">English</option>
-                        <option value="es">Español</option>
-                        <option value="fr">Français</option>
-                        <option value="de">Deutsch</option>
-                        <option value="ar">العربية</option>
-                        <option value="ru">Русский</option>
-                    </select>
-                </div>
+                <LanguageSelector />
 
                 <div className="bg-white/90 backdrop-blur-md p-1.5 rounded-lg shadow-md border border-gray-200">
                     <UserButton afterSignOutUrl="/" />

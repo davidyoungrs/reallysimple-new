@@ -165,7 +165,7 @@ export function BusinessCard({ data }: BusinessCardProps) {
                                     <Phone className="w-5 h-5 text-white" />
                                 </div>
                                 <div className="flex flex-col text-left">
-                                    <span className="text-xs text-white/60 font-medium uppercase tracking-wider">{phone.label}</span>
+                                    <span className="text-xs text-white/60 font-medium uppercase tracking-wider">{t(phone.label)}</span>
                                     <span className="text-white font-medium text-lg">{phone.number}</span>
                                 </div>
                             </a>

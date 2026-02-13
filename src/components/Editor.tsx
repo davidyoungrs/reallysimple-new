@@ -10,9 +10,10 @@ interface SortableSocialLinkProps {
     link: SocialLink;
     handleSocialChange: (id: string, field: keyof SocialLink, value: string) => void;
     removeSocialLink: (id: string) => void;
+    t: (key: string) => string;
 }
 
-function SortableSocialLink({ link, handleSocialChange, removeSocialLink }: SortableSocialLinkProps) {
+function SortableSocialLink({ link, handleSocialChange, removeSocialLink, t }: SortableSocialLinkProps) {
     const {
         attributes,
         listeners,
@@ -39,9 +40,9 @@ function SortableSocialLink({ link, handleSocialChange, removeSocialLink }: Sort
                     onChange={(e) => handleSocialChange(link.id, 'platform', e.target.value as SocialPlatform)}
                     className="flex-1 sm:flex-none bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none"
                 >
-                    <option value="email">Email</option>
-                    <option value="website">Website</option>
-                    <option value="linkedin">LinkedIn</option>
+                    <option value="email">{t('Email')}</option>
+                    <option value="website">{t('Website')}</option>
+                    <option value="linkedin">{t('LinkedIn')}</option>
                     <option value="amazonmusic">Amazon Music</option>
                     <option value="bandcamp">Bandcamp</option>
                     <option value="bandlab">BandLab</option>
@@ -57,14 +58,14 @@ function SortableSocialLink({ link, handleSocialChange, removeSocialLink }: Sort
                     <option value="tiktok">TikTok</option>
                     <option value="twitter">Twitter</option>
                     <option value="youtube">YouTube</option>
-                    <option value="custom">Custom Link</option>
+                    <option value="custom">{t('Custom Link')}</option>
                 </select>
             </div>
 
             <div className="flex-1 flex flex-col gap-2">
                 <input
                     type="text"
-                    placeholder={link.platform === 'email' ? "Email Address" : "URL"}
+                    placeholder={link.platform === 'email' ? t('Email Address') : t('URL')}
                     value={link.url}
                     onChange={(e) => handleSocialChange(link.id, 'url', e.target.value)}
                     className="w-full px-4 py-3 sm:py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
@@ -73,7 +74,7 @@ function SortableSocialLink({ link, handleSocialChange, removeSocialLink }: Sort
                     <div className="flex gap-2">
                         <input
                             type="text"
-                            placeholder="Label (e.g. My Portfolio)"
+                            placeholder={t('Label')}
                             value={link.label || ''}
                             onChange={(e) => handleSocialChange(link.id, 'label', e.target.value)}
                             className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
@@ -101,7 +102,7 @@ function SortableSocialLink({ link, handleSocialChange, removeSocialLink }: Sort
                                 title="Upload Custom Icon"
                             >
                                 {link.customIconUrl ? <img src={link.customIconUrl} className="w-5 h-5 object-contain" /> : <Upload className="w-4 h-4" />}
-                                <span className="hidden sm:inline">{link.customIconUrl ? 'Change' : 'Icon'}</span>
+                                <span className="hidden sm:inline">{link.customIconUrl ? t('Change') : t('Icon')}</span>
                             </label>
                             {link.customIconUrl && (
                                 <button
@@ -186,7 +187,7 @@ function SortablePhoneNumber({ phone, handlePhoneChange, removePhoneNumber, t }:
                 </div>
                 <input
                     type="text"
-                    placeholder={t('Number (e.g. +1 555 000 0000)')}
+                    placeholder={t('Number Placeholder')}
                     value={phone.number}
                     onChange={(e) => handlePhoneChange(phone.id, 'number', e.target.value)}
                     className="w-full sm:w-2/3 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm self-start"
@@ -497,6 +498,7 @@ export function Editor({ data, onChange }: EditorProps) {
                                         link={link}
                                         handleSocialChange={handleSocialChange}
                                         removeSocialLink={removeSocialLink}
+                                        t={t}
                                     />
                                 ))}
                             </SortableContext>
@@ -532,11 +534,11 @@ export function Editor({ data, onChange }: EditorProps) {
                                     onChange={(e) => handleEmbedChange(index, 'type', e.target.value)}
                                     className="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none"
                                 >
-                                    <option value="youtube">YouTube Video</option>
-                                    <option value="vimeo">Vimeo Video</option>
-                                    <option value="tiktok">TikTok Video</option>
-                                    <option value="instagram">Instagram Post/Reel</option>
-                                    <option value="spotify">Spotify Track/Album</option>
+                                    <option value="youtube">{t('YouTube Video')}</option>
+                                    <option value="vimeo">{t('Vimeo Video')}</option>
+                                    <option value="tiktok">{t('TikTok Video')}</option>
+                                    <option value="instagram">{t('Instagram Post')}</option>
+                                    <option value="spotify">{t('Spotify Track')}</option>
                                 </select>
                                 <div className="flex-1"></div>
                                 <button
@@ -549,11 +551,11 @@ export function Editor({ data, onChange }: EditorProps) {
                             <input
                                 type="text"
                                 placeholder={
-                                    embed.type === 'youtube' ? "YouTube URL (e.g. https://youtu.be/...)" :
-                                        embed.type === 'vimeo' ? "Vimeo URL" :
-                                            embed.type === 'tiktok' ? "TikTok URL" :
-                                                embed.type === 'instagram' ? "Instagram URL" :
-                                                    "Spotify URL"
+                                    embed.type === 'youtube' ? t('YouTube Video') :
+                                        embed.type === 'vimeo' ? t('Vimeo Video') :
+                                            embed.type === 'tiktok' ? t('TikTok Video') :
+                                                embed.type === 'instagram' ? t('Instagram Post') :
+                                                    t('Spotify Track')
                                 }
                                 value={embed.url}
                                 onChange={(e) => handleEmbedChange(index, 'url', e.target.value)}
@@ -694,7 +696,7 @@ export function Editor({ data, onChange }: EditorProps) {
                             onChange={(e) => handleFileChange(e, 'logoUrl')}
                         />
                         <div className="text-xs text-gray-500 flex-1">
-                            {t('Upload your company logo. This will hide the company name text.')}
+                            {t('Logo Helper')}
                         </div>
                     </div>
                 </div>
@@ -755,7 +757,7 @@ export function Editor({ data, onChange }: EditorProps) {
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-xs text-gray-500 mb-1">{t('Image URL or Upload')}</label>
+                                    <label className="block text-xs text-gray-500 mb-1">{t('Image URL')}</label>
                                     <div className="flex gap-2">
                                         <input
                                             type="text"
@@ -855,19 +857,19 @@ export function Editor({ data, onChange }: EditorProps) {
                         <div className="grid grid-cols-3 gap-2">
                             <button
                                 onClick={() => handleChange('layoutMode', 'classic')}
-                                className={`py-2 px-3 text-xs font-medium rounded-lg border transition-all ${data.layoutMode === 'classic' || !data.layoutMode ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                                className={`py-2 px-3 text-xs font-medium rounded-lg border transition-all h-auto min-h-[40px] flex items-center justify-center text-center break-words whitespace-normal leading-tight ${data.layoutMode === 'classic' || !data.layoutMode ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
                             >
                                 {t('Classic')}
                             </button>
                             <button
                                 onClick={() => handleChange('layoutMode', 'modern-left')}
-                                className={`py-2 px-3 text-xs font-medium rounded-lg border transition-all ${data.layoutMode === 'modern-left' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                                className={`py-2 px-3 text-xs font-medium rounded-lg border transition-all h-auto min-h-[40px] flex items-center justify-center text-center break-words whitespace-normal leading-tight ${data.layoutMode === 'modern-left' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
                             >
                                 {t('Modern Left')}
                             </button>
                             <button
                                 onClick={() => handleChange('layoutMode', 'hero')}
-                                className={`py-2 px-3 text-xs font-medium rounded-lg border transition-all ${data.layoutMode === 'hero' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                                className={`py-2 px-3 text-xs font-medium rounded-lg border transition-all h-auto min-h-[40px] flex items-center justify-center text-center break-words whitespace-normal leading-tight ${data.layoutMode === 'hero' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
                             >
                                 {t('Hero')}
                             </button>

@@ -1,15 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Share2, ShieldCheck, Zap, Globe } from 'lucide-react';
+import { Share2, ShieldCheck, Zap } from 'lucide-react';
 import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
+import { LanguageSelector } from './LanguageSelector';
 
 export const LandingPage = () => {
-    const { t, i18n } = useTranslation();
-
-    const changeLanguage = (lng: string) => {
-        i18n.changeLanguage(lng);
-    };
+    const { t } = useTranslation();
 
     return (
         <div className="min-h-screen bg-white">
@@ -22,21 +19,7 @@ export const LandingPage = () => {
                         </div>
                         <div className="flex items-center gap-4">
                             {/* Language Selector */}
-                            <div className="hidden md:flex items-center gap-1 text-gray-600">
-                                <Globe className="w-4 h-4" />
-                                <select
-                                    onChange={(e) => changeLanguage(e.target.value)}
-                                    value={i18n.language}
-                                    className="bg-transparent text-sm border-none focus:ring-0 cursor-pointer font-medium outline-none"
-                                >
-                                    <option value="en">English</option>
-                                    <option value="es">Español</option>
-                                    <option value="fr">Français</option>
-                                    <option value="de">Deutsch</option>
-                                    <option value="ar">العربية</option>
-                                    <option value="ru">Русский</option>
-                                </select>
-                            </div>
+                            <LanguageSelector />
 
                             <SignedIn>
                                 <Link to="/app" className="hidden sm:inline-flex bg-gray-900 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors">
