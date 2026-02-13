@@ -1,5 +1,5 @@
 import { type CardData, type SocialLink, type SocialPlatform, type PhoneNumber } from '../types';
-import { Plus, Trash2, GripVertical, Upload, X } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Upload, X, Music, Youtube, Instagram, Video } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
@@ -297,10 +297,79 @@ export function Editor({ data, onChange }: EditorProps) {
         handleChange('phoneNumbers', newPhones);
     };
 
+    const addEmbed = () => {
+        const newEmbed = { type: 'youtube' as const, url: '' };
+        handleChange('embeds', [...(data.embeds || []), newEmbed]);
+    };
+
+    const removeEmbed = (index: number) => {
+        handleChange('embeds', (data.embeds || []).filter((_, i) => i !== index));
+    };
+
+    const handleEmbedChange = (index: number, field: string, value: string) => {
+        const newEmbeds = (data.embeds || []).map((embed, i) =>
+            i === index ? { ...embed, [field]: value } : embed
+        );
+        handleChange('embeds', newEmbeds);
+    };
+
+    // Section Management
+    /*
+    const addSection = () => {
+        const newSection = {
+            id: Date.now().toString(),
+            title: 'New Section',
+            links: []
+        };
+        handleChange('sections', [...(data.sections || []), newSection]);
+    };
+
+    const removeSection = (sectionId: string) => {
+        handleChange('sections', (data.sections || []).filter(s => s.id !== sectionId));
+    };
+
+    const updateSectionTitle = (sectionId: string, title: string) => {
+        const newSections = (data.sections || []).map(s =>
+            s.id === sectionId ? { ...s, title } : s
+        );
+        handleChange('sections', newSections);
+    };
+
+    const addLinkToSection = (sectionId: string) => {
+        const newLink: SocialLink = {
+            id: Date.now().toString(),
+            platform: 'website',
+            url: '',
+            label: ''
+        };
+        const newSections = (data.sections || []).map(s =>
+            s.id === sectionId ? { ...s, links: [...s.links, newLink] } : s
+        );
+        handleChange('sections', newSections);
+    };
+
+    const removeLinkFromSection = (sectionId: string, linkId: string) => {
+        const newSections = (data.sections || []).map(s =>
+            s.id === sectionId ? { ...s, links: s.links.filter(l => l.id !== linkId) } : s
+        );
+        handleChange('sections', newSections);
+    };
+
+    const handleSectionLinkChange = (sectionId: string, linkId: string, field: keyof SocialLink, value: string) => {
+        const newSections = (data.sections || []).map(s =>
+            s.id === sectionId ? {
+                ...s,
+                links: s.links.map(l => l.id === linkId ? { ...l, [field]: value } : l)
+            } : s
+        );
+        handleChange('sections', newSections);
+    };
+    */
+
     return (
-        <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8 space-y-8 h-full overflow-y-auto">
+        <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8 md:pt-20 space-y-8 h-full overflow-y-auto">
             <div>
-                <img src="/logo.png" alt="Really Simple Apps" className="w-1/2 mb-4" />
+                <img src="/logo.png" alt="Really Simple Apps" className="w-[180px] mb-6" />
                 <h2 className="text-2xl font-bold text-gray-900 mb-1">{t('Edit Profile')}</h2>
                 <p className="text-gray-500 text-sm">{t('Update Info')}</p>
             </div>
@@ -436,6 +505,160 @@ export function Editor({ data, onChange }: EditorProps) {
                 </div>
             </div>
 
+            {/* Rich Visual Media Embeds */}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">{t('Rich Visual Media')}</h3>
+                    <button
+                        onClick={addEmbed}
+                        className="text-sm flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium py-2 px-3 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                        <Plus className="w-4 h-4" /> {t('Add Embed')}
+                    </button>
+                </div>
+
+                <div className="space-y-3">
+                    {(data.embeds || []).map((embed, index) => (
+                        <div key={index} className="flex flex-col gap-2 bg-gray-50 p-3 rounded-xl border border-gray-200">
+                            <div className="flex items-center gap-2">
+                                <div className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500">
+                                    {embed.type === 'youtube' ? <Youtube className="w-4 h-4" /> :
+                                        embed.type === 'spotify' ? <Music className="w-4 h-4" /> :
+                                            embed.type === 'instagram' ? <Instagram className="w-4 h-4" /> :
+                                                <Video className="w-4 h-4" />}
+                                </div>
+                                <select
+                                    value={embed.type}
+                                    onChange={(e) => handleEmbedChange(index, 'type', e.target.value)}
+                                    className="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none"
+                                >
+                                    <option value="youtube">YouTube Video</option>
+                                    <option value="vimeo">Vimeo Video</option>
+                                    <option value="tiktok">TikTok Video</option>
+                                    <option value="instagram">Instagram Post/Reel</option>
+                                    <option value="spotify">Spotify Track/Album</option>
+                                </select>
+                                <div className="flex-1"></div>
+                                <button
+                                    onClick={() => removeEmbed(index)}
+                                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <input
+                                type="text"
+                                placeholder={
+                                    embed.type === 'youtube' ? "YouTube URL (e.g. https://youtu.be/...)" :
+                                        embed.type === 'vimeo' ? "Vimeo URL" :
+                                            embed.type === 'tiktok' ? "TikTok URL" :
+                                                embed.type === 'instagram' ? "Instagram URL" :
+                                                    "Spotify URL"
+                                }
+                                value={embed.url}
+                                onChange={(e) => handleEmbedChange(index, 'url', e.target.value)}
+                                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
+                            />
+                            <input
+                                type="text"
+                                placeholder="Optional Title"
+                                value={embed.title || ''}
+                                onChange={(e) => handleEmbedChange(index, 'title', e.target.value)}
+                                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
+                            />
+                        </div>
+                    ))}
+                    {(data.embeds || []).length === 0 && (
+                        <div className="text-center py-6 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-sm">
+                            No active embeds. Add YouTube videos or Spotify tracks.
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Accordion Sections - Temporarily Disabled
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">{t('Accordion Sections')}</h3>
+                    <button
+                        onClick={addSection}
+                        className="text-sm flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium py-2 px-3 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                        <Plus className="w-4 h-4" /> {t('Add Section')}
+                    </button>
+                </div>
+
+                <div className="space-y-6">
+                    {(data.sections || []).map((section) => (
+                        <div key={section.id} className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                            <div className="p-4 border-b border-gray-200 flex items-center gap-3 bg-gray-100/50">
+                                <input
+                                    type="text"
+                                    value={section.title}
+                                    onChange={(e) => updateSectionTitle(section.id, e.target.value)}
+                                    className="flex-1 bg-transparent font-medium text-gray-900 placeholder-gray-500 outline-none hover:bg-white/50 focus:bg-white px-2 py-1 rounded transition-colors"
+                                    placeholder="Section Title"
+                                />
+                                <button
+                                    onClick={() => removeSection(section.id)}
+                                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                    title="Delete Section"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            <div className="p-4 space-y-3">
+                                <DndContext
+                                    id={`section-dnd-${section.id}`}
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={(event) => {
+                                        const { active, over } = event;
+                                        if (over && active.id !== over.id) {
+                                            const oldIndex = section.links.findIndex((link) => link.id === active.id);
+                                            const newIndex = section.links.findIndex((link) => link.id === over.id);
+                                            const newLinks = arrayMove(section.links, oldIndex, newIndex);
+                                            const newSections = (data.sections || []).map(s =>
+                                                s.id === section.id ? { ...s, links: newLinks } : s
+                                            );
+                                            handleChange('sections', newSections);
+                                        }
+                                    }}
+                                >
+                                    <SortableContext
+                                        items={section.links}
+                                        strategy={verticalListSortingStrategy}
+                                    >
+                                        {section.links.map((link) => (
+                                            <SortableSocialLink
+                                                key={link.id}
+                                                link={link}
+                                                handleSocialChange={(linkId, field, value) => handleSectionLinkChange(section.id, linkId, field, value)}
+                                                removeSocialLink={(linkId) => removeLinkFromSection(section.id, linkId)}
+                                            />
+                                        ))}
+                                    </SortableContext>
+                                </DndContext>
+
+                                <button
+                                    onClick={() => addLinkToSection(section.id)}
+                                    className="w-full py-2 flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-lg text-gray-500 hover:border-blue-500 hover:text-blue-500 transition-all text-sm font-medium"
+                                >
+                                    <Plus className="w-4 h-4" /> {t('Add Link to Section')}
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                    {(data.sections || []).length === 0 && (
+                        <div className="text-center py-6 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-sm">
+                            {t('No sections yet. Group your links into collapsible sections.')}
+                        </div>
+                    )}
+                </div>
+            </div>
+            */}
+
             {/* Branding */}
             <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">{t('Branding')}</h3>
@@ -498,8 +721,30 @@ export function Editor({ data, onChange }: EditorProps) {
 
                     {data.showPhoto && (
                         <div className="space-y-4">
+                            {/* Photo Shape Selection */}
+                            <div className="flex gap-2 mb-2">
+                                <button
+                                    onClick={() => handleChange('photoStyle', 'circle')}
+                                    className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-all ${data.photoStyle === 'circle' || !data.photoStyle ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                                >
+                                    {t('Circle')}
+                                </button>
+                                <button
+                                    onClick={() => handleChange('photoStyle', 'rounded')}
+                                    className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-all ${data.photoStyle === 'rounded' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                                >
+                                    {t('Rounded')}
+                                </button>
+                                <button
+                                    onClick={() => handleChange('photoStyle', 'full')}
+                                    className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-all ${data.photoStyle === 'full' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                                >
+                                    {t('Full Width')}
+                                </button>
+                            </div>
+
                             <div className="flex items-center gap-4">
-                                <div className="relative w-16 h-16 rounded-full overflow-hidden border border-gray-200 bg-gray-50">
+                                <div className={`relative w-16 h-16 overflow-hidden border border-gray-200 bg-gray-50 ${data.photoStyle === 'circle' || !data.photoStyle ? 'rounded-full' : data.photoStyle === 'rounded' ? 'rounded-xl' : 'rounded-none w-full h-16'}`}>
                                     <img
                                         src={data.avatarUrl}
                                         alt="Avatar"
@@ -599,6 +844,56 @@ export function Editor({ data, onChange }: EditorProps) {
                             </div>
                         </div>
                     )}
+                </div>
+
+                {/* Layout & Interface Settings */}
+                <div className="pt-2 border-t border-gray-100">
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">{t('Start Layout & Interface')}</h3>
+
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('Card Layout')}</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            <button
+                                onClick={() => handleChange('layoutMode', 'classic')}
+                                className={`py-2 px-3 text-xs font-medium rounded-lg border transition-all ${data.layoutMode === 'classic' || !data.layoutMode ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                            >
+                                {t('Classic')}
+                            </button>
+                            <button
+                                onClick={() => handleChange('layoutMode', 'modern-left')}
+                                className={`py-2 px-3 text-xs font-medium rounded-lg border transition-all ${data.layoutMode === 'modern-left' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                            >
+                                {t('Modern Left')}
+                            </button>
+                            <button
+                                onClick={() => handleChange('layoutMode', 'hero')}
+                                className={`py-2 px-3 text-xs font-medium rounded-lg border transition-all ${data.layoutMode === 'hero' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                            >
+                                {t('Hero')}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">{t('Sticky Action Bar')}</label>
+                            <p className="text-xs text-gray-500">{t('Pin actions to bottom of screen')}</p>
+                        </div>
+                        <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
+                            <button
+                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${data.stickyActionBar ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                                onClick={() => handleChange('stickyActionBar', true)}
+                            >
+                                {t('On')}
+                            </button>
+                            <button
+                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${!data.stickyActionBar ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                                onClick={() => handleChange('stickyActionBar', false)}
+                            >
+                                {t('Off')}
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Background Settings */}

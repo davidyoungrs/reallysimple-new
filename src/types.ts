@@ -25,23 +25,36 @@ export interface CardData {
     gradientColor?: string;
     backgroundType: 'solid' | 'gradient';
     showPhoto: boolean;
+    photoStyle?: 'circle' | 'rounded' | 'full';
     avatarScale?: number;
     avatarPosition?: { x: number; y: number };
     font: string;
     phoneNumbers: PhoneNumber[];
     socialLinks: SocialLink[];
+    layoutMode: 'classic' | 'modern-left' | 'hero';
+    stickyActionBar: boolean;
+    embeds: { type: 'youtube' | 'spotify' | 'vimeo' | 'tiktok' | 'instagram'; url: string; title?: string }[];
+    sections?: Section[];
+}
+
+export interface Section {
+    id: string;
+    title: string;
+    links: SocialLink[];
+    isOpen?: boolean;
 }
 
 export const initialCardData: CardData = {
     fullName: 'David Young',
     jobTitle: 'Software Engineer',
-    company: 'Really Simple Apps',
+    company: 'REALLY SIMPLE APPS',
     bio: 'Building digital experiences that matter.',
     avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-    themeColor: '#3b82f6',
+    themeColor: 'blue',
     gradientColor: '#000000',
     backgroundType: 'gradient',
     showPhoto: true,
+    photoStyle: 'circle',
     avatarScale: 1,
     avatarPosition: { x: 0, y: 0 },
     font: 'Inter',
@@ -53,5 +66,9 @@ export const initialCardData: CardData = {
         { id: '1', platform: 'email', url: 'mailto:david@example.com', label: 'Email' },
         { id: '2', platform: 'website', url: 'https://reallysimpleapps.com', label: 'Website' },
         { id: '3', platform: 'linkedin', url: 'https://linkedin.com/in/davidyoung', label: 'LinkedIn' },
-    ]
+    ],
+    layoutMode: 'classic',
+    stickyActionBar: true,
+    embeds: [],
+    sections: []
 };
