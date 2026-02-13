@@ -94,7 +94,10 @@ export function BusinessCard({ data }: BusinessCardProps) {
             <div className="absolute inset-0 opacity-20 contrast-125 mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
 
             {/* Glassmorphism Container */}
-            <div className={`relative z-10 h-full flex flex-col ${data.layoutMode === 'modern-left' ? 'items-start text-left' : 'items-center text-center'} justify-between p-8 text-white`}>
+            <div
+                className={`relative z-10 h-full flex flex-col ${data.layoutMode === 'modern-left' ? 'items-start text-left' : 'items-center text-center'} justify-between p-8`}
+                style={{ color: data.textColor || '#ffffff' }}
+            >
 
                 {/* Header / Avatar */}
                 <div className={`flex flex-col ${data.layoutMode === 'modern-left' ? 'items-start' : 'items-center'} space-y-4 mt-8 w-full`}>
@@ -135,21 +138,21 @@ export function BusinessCard({ data }: BusinessCardProps) {
 
                     <div className={`${data.layoutMode === 'modern-left' ? 'text-left' : 'text-center'} space-y-1 w-full`}>
                         <h1 className="text-3xl font-bold tracking-tight">{fullName}</h1>
-                        <p className="text-lg font-medium text-white/80">{jobTitle}</p>
+                        <p className="text-lg font-medium opacity-80">{jobTitle}</p>
                         {!logoUrl && (
-                            <p className="text-sm font-light uppercase tracking-widest text-white/60">{company}</p>
+                            <p className="text-sm font-light uppercase tracking-widest opacity-60">{company}</p>
                         )}
                     </div>
                 </div>
 
                 {/* Bio */}
                 <div className={`${data.layoutMode === 'modern-left' ? 'text-left' : 'text-center'} max-w-xs`}>
-                    <p className="text-white/90 leading-relaxed font-light">{bio}</p>
+                    <p className="leading-relaxed font-light opacity-90">{bio}</p>
                 </div>
 
                 {/* Social Links */}
                 <div className="w-full">
-                    <SocialLinks links={socialLinks} className="mb-8" />
+                    <SocialLinks links={socialLinks} className="mb-8" iconColor={data.textColor} />
                 </div>
 
                 {/* Phone Numbers */}
@@ -162,11 +165,11 @@ export function BusinessCard({ data }: BusinessCardProps) {
                                 className="flex items-center gap-4 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 p-4 rounded-2xl transition-all hover:scale-[1.02] group"
                             >
                                 <div className="bg-white/20 p-2.5 rounded-full group-hover:bg-white/30 transition-colors">
-                                    <Phone className="w-5 h-5 text-white" />
+                                    <Phone className="w-5 h-5" style={{ color: data.textColor || '#ffffff' }} />
                                 </div>
                                 <div className="flex flex-col text-left">
-                                    <span className="text-xs text-white/60 font-medium uppercase tracking-wider">{t(phone.label)}</span>
-                                    <span className="text-white font-medium text-lg">{phone.number}</span>
+                                    <span className="text-xs font-medium uppercase tracking-wider opacity-60">{t(phone.label)}</span>
+                                    <span className="font-medium text-lg">{phone.number}</span>
                                 </div>
                             </a>
                         ))}
@@ -314,8 +317,24 @@ export function BusinessCard({ data }: BusinessCardProps) {
 
                     <div className={`flex justify-center pt-2 ${data.stickyActionBar ? 'mb-4' : ''}`}>
                         <div className="p-2 bg-white rounded-xl shadow-lg">
-                            {/* QR Code pointing to current URL */}
-                            <QRCodeSVG value={window.location.href} size={48} />
+                            {/* QR Code - use base URL if current URL is too long */}
+                            {(() => {
+                                try {
+                                    const currentUrl = window.location.href;
+                                    // QR codes have a max capacity. If URL is too long, use base URL
+                                    const qrUrl = currentUrl.length > 2000
+                                        ? window.location.origin + window.location.pathname
+                                        : currentUrl;
+                                    return <QRCodeSVG value={qrUrl} size={48} />;
+                                } catch (error) {
+                                    console.error('QR code generation failed:', error);
+                                    return (
+                                        <div className="w-12 h-12 flex items-center justify-center text-xs text-gray-400">
+                                            QR
+                                        </div>
+                                    );
+                                }
+                            })()}
                         </div>
                     </div>
                 </div>

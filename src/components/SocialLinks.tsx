@@ -50,9 +50,10 @@ const iconMap: Record<string, any> = {
 interface SocialLinksProps {
     links: SocialLink[];
     className?: string;
+    iconColor?: string;
 }
 
-export function SocialLinks({ links, className = '' }: SocialLinksProps) {
+export function SocialLinks({ links, className = '', iconColor }: SocialLinksProps) {
     if (!links.length) return null;
 
     return (
@@ -78,7 +79,10 @@ export function SocialLinks({ links, className = '' }: SocialLinksProps) {
                                 className="w-5 h-5 object-contain"
                             />
                         ) : (
-                            <Icon className="w-5 h-5 text-white/90 group-hover:text-white" />
+                            <Icon
+                                className="w-5 h-5 opacity-90 group-hover:opacity-100 transition-opacity"
+                                style={{ color: iconColor || '#ffffff' }}
+                            />
                         )}
                     </a>
                 );

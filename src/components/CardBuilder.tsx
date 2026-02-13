@@ -9,6 +9,16 @@ import { ChevronUp, ChevronDown, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LanguageSelector } from './LanguageSelector';
 
+// Declare Clerk on window for TypeScript
+declare global {
+    interface Window {
+        Clerk?: {
+            session?: {
+                getToken: () => Promise<string>;
+            };
+        };
+    }
+}
 
 // Helper component to scale content to fit container
 const ScaleToFit = ({ children }: { children: React.ReactNode }) => {
@@ -72,6 +82,8 @@ const ScaleToFit = ({ children }: { children: React.ReactNode }) => {
 export function CardBuilder() {
     const { t } = useTranslation();
     const [isEditorOpen, setIsEditorOpen] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
     // Initialize state from URL or default
     const [data, setData] = useState<CardData>(() => {
@@ -87,6 +99,44 @@ export function CardBuilder() {
         return () => clearTimeout(timer);
     }, [data]);
 
+    // Save card to database
+    const handleSaveCard = async () => {
+        setIsSaving(true);
+        setSaveStatus('idle');
+
+        try {
+            // Get Clerk session token
+            const token = await window.Clerk?.session?.getToken();
+
+            if (!token) {
+                throw new Error('Not authenticated');
+            }
+
+            const response = await fetch('/api/save-card', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({ cardData: data }),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to save card');
+            }
+
+            setSaveStatus('success');
+            setTimeout(() => setSaveStatus('idle'), 3000);
+        } catch (error: any) {
+            console.error('Error saving card:', error);
+            setSaveStatus('error');
+            setTimeout(() => setSaveStatus('idle'), 3000);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col md:flex-row relative overflow-hidden">
 
@@ -98,8 +148,21 @@ export function CardBuilder() {
                 </Link>
             </div>
 
-            {/* Right Side: User Profile & Language Switcher */}
+            {/* Right Side: Save Button, User Profile & Language Switcher */}
             <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+                <button
+                    onClick={handleSaveCard}
+                    disabled={isSaving}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all shadow-md ${saveStatus === 'success'
+                        ? 'bg-green-500 text-white'
+                        : saveStatus === 'error'
+                            ? 'bg-red-500 text-white'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                        } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                    {isSaving ? t('Saving...') : saveStatus === 'success' ? t('Saved!') : saveStatus === 'error' ? t('Error') : t('Save Card')}
+                </button>
+
                 <LanguageSelector />
 
                 <div className="bg-white/90 backdrop-blur-md p-1.5 rounded-lg shadow-md border border-gray-200">

@@ -952,34 +952,49 @@ export function Editor({ data, onChange }: EditorProps) {
                 {/* Font Selection */}
                 <div className="pt-2 border-t border-gray-100">
                     <label className="block text-sm font-medium text-gray-700 mb-2">{t('Typography')}</label>
-                    <select
-                        value={data.font || 'Inter'}
-                        onChange={(e) => handleChange('font', e.target.value)}
-                        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                        style={{ fontFamily: data.font || 'Inter' }}
-                    >
-                        <option value="Bebas Neue" style={{ fontFamily: 'Bebas Neue' }}>Bebas Neue</option>
-                        <option value="Dancing Script" style={{ fontFamily: 'Dancing Script' }}>Dancing Script</option>
-                        <option value="Inter" style={{ fontFamily: 'Inter' }}>Inter</option>
-                        <option value="Lato" style={{ fontFamily: 'Lato' }}>Lato</option>
-                        <option value="Lobster" style={{ fontFamily: 'Lobster' }}>Lobster</option>
-                        <option value="Lora" style={{ fontFamily: 'Lora' }}>Lora</option>
-                        <option value="Merriweather" style={{ fontFamily: 'Merriweather' }}>Merriweather</option>
-                        <option value="Montserrat" style={{ fontFamily: 'Montserrat' }}>Montserrat</option>
-                        <option value="Nunito" style={{ fontFamily: 'Nunito' }}>Nunito</option>
-                        <option value="Open Sans" style={{ fontFamily: 'Open Sans' }}>Open Sans</option>
-                        <option value="Oswald" style={{ fontFamily: 'Oswald' }}>Oswald</option>
-                        <option value="Pacifico" style={{ fontFamily: 'Pacifico' }}>Pacifico</option>
-                        <option value="Playfair Display" style={{ fontFamily: 'Playfair Display' }}>Playfair Display</option>
-                        <option value="Poppins" style={{ fontFamily: 'Poppins' }}>Poppins</option>
-                        <option value="PT Serif" style={{ fontFamily: 'PT Serif' }}>PT Serif</option>
-                        <option value="Raleway" style={{ fontFamily: 'Raleway' }}>Raleway</option>
-                        <option value="Roboto" style={{ fontFamily: 'Roboto' }}>Roboto</option>
-                        <option value="Roboto Mono" style={{ fontFamily: 'Roboto Mono' }}>Roboto Mono</option>
-                        <option value="Rubik" style={{ fontFamily: 'Rubik' }}>Rubik</option>
-                        <option value="Source Sans 3" style={{ fontFamily: 'Source Sans 3' }}>Source Sans 3</option>
-                        <option value="Ubuntu" style={{ fontFamily: 'Ubuntu' }}>Ubuntu</option>
-                    </select>
+                    <div className="space-y-3">
+                        <select
+                            value={data.font || 'Inter'}
+                            onChange={(e) => handleChange('font', e.target.value)}
+                            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                            style={{ fontFamily: data.font || 'Inter' }}
+                        >
+                            <option value="Bebas Neue" style={{ fontFamily: 'Bebas Neue' }}>Bebas Neue</option>
+                            <option value="Dancing Script" style={{ fontFamily: 'Dancing Script' }}>Dancing Script</option>
+                            <option value="Inter" style={{ fontFamily: 'Inter' }}>Inter</option>
+                            <option value="Lato" style={{ fontFamily: 'Lato' }}>Lato</option>
+                            <option value="Lobster" style={{ fontFamily: 'Lobster' }}>Lobster</option>
+                            <option value="Lora" style={{ fontFamily: 'Lora' }}>Lora</option>
+                            <option value="Merriweather" style={{ fontFamily: 'Merriweather' }}>Merriweather</option>
+                            <option value="Montserrat" style={{ fontFamily: 'Montserrat' }}>Montserrat</option>
+                            <option value="Nunito" style={{ fontFamily: 'Nunito' }}>Nunito</option>
+                            <option value="Open Sans" style={{ fontFamily: 'Open Sans' }}>Open Sans</option>
+                            <option value="Oswald" style={{ fontFamily: 'Oswald' }}>Oswald</option>
+                            <option value="Pacifico" style={{ fontFamily: 'Pacifico' }}>Pacifico</option>
+                            <option value="Playfair Display" style={{ fontFamily: 'Playfair Display' }}>Playfair Display</option>
+                            <option value="Poppins" style={{ fontFamily: 'Poppins' }}>Poppins</option>
+                            <option value="PT Serif" style={{ fontFamily: 'PT Serif' }}>PT Serif</option>
+                            <option value="Raleway" style={{ fontFamily: 'Raleway' }}>Raleway</option>
+                            <option value="Roboto" style={{ fontFamily: 'Roboto' }}>Roboto</option>
+                            <option value="Roboto Mono" style={{ fontFamily: 'Roboto Mono' }}>Roboto Mono</option>
+                            <option value="Rubik" style={{ fontFamily: 'Rubik' }}>Rubik</option>
+                            <option value="Source Sans 3" style={{ fontFamily: 'Source Sans 3' }}>Source Sans 3</option>
+                            <option value="Ubuntu" style={{ fontFamily: 'Ubuntu' }}>Ubuntu</option>
+                        </select>
+
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">{t('Text Color')}</label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="color"
+                                    value={data.textColor || '#ffffff'}
+                                    onChange={(e) => handleChange('textColor', e.target.value)}
+                                    className="h-10 w-10 rounded-lg cursor-pointer border-0 p-0"
+                                />
+                                <span className="text-gray-500 text-xs uppercase">{data.textColor || '#ffffff'}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
