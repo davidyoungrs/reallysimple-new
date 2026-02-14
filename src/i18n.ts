@@ -64,7 +64,6 @@ const resources = {
             "Log in": "Log in",
             "Create Card": "Create Card",
             "Dashboard": "Dashboard",
-            "My Cards": "My Cards",
             "Edit": "Edit",
             "views": "views",
             "Loading your cards...": "Loading your cards...",
