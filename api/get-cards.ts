@@ -3,9 +3,9 @@ import { businessCards, cardViews } from '../src/db/schema.js';
 import { verifyToken } from '@clerk/backend';
 import { eq, desc, sql } from 'drizzle-orm';
 
-export const config = {
-    runtime: 'edge',
-};
+// export const config = {
+//     runtime: 'edge',
+// };
 
 export default async function handler(req: Request) {
     if (req.method !== 'GET') {

@@ -2,9 +2,9 @@ import { db } from '../src/db/index.js';
 import { businessCards, cardViews } from '../src/db/schema.js';
 import { eq, and } from 'drizzle-orm';
 
-export const config = {
-    runtime: 'edge',
-};
+// export const config = {
+//     runtime: 'edge',
+// };
 
 export default async function handler(req: Request) {
     if (req.method !== 'DELETE' && req.method !== 'POST') {
