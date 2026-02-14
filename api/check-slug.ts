@@ -2,9 +2,9 @@ import { db } from '../src/db/index.js';
 import { businessCards } from '../src/db/schema.js';
 import { eq } from 'drizzle-orm';
 
-export const config = {
-    runtime: 'edge',
-};
+// export const config = {
+//     runtime: 'edge',
+// };
 
 // Reserved slugs that cannot be used
 const RESERVED_SLUGS = [

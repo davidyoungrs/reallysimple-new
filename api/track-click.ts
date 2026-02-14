@@ -1,5 +1,5 @@
-import { db } from '../src/db';
-import { businessCards, cardClicks } from '../src/db/schema';
+import { db } from '../src/db/index.js';
+import { businessCards, cardClicks } from '../src/db/schema.js';
 import { eq } from 'drizzle-orm';
 
 export default async function handler(request: Request) {
