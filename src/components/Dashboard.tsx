@@ -75,10 +75,12 @@ export function Dashboard() {
 
         setIsDeleting(true);
         try {
+            const token = await getToken();
             const response = await fetch('/api/delete-card', {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     cardId,

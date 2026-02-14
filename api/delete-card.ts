@@ -1,6 +1,7 @@
 import { db } from '../src/db/index.js';
-import { businessCards, cardViews } from '../src/db/schema.js';
+import { businessCards, cardViews, cardClicks } from '../src/db/schema.js';
 import { eq, and } from 'drizzle-orm';
+import { verifyToken } from '@clerk/backend';
 
 // export const config = {
 //     runtime: 'edge',
@@ -12,18 +13,40 @@ export default async function handler(req: Request) {
     }
 
     try {
+        const authHeader = req.headers.get('Authorization');
+        if (!authHeader?.startsWith('Bearer ')) {
+            return new Response(JSON.stringify({ error: 'Missing authorization header' }), { status: 401 });
+        }
+
+        const token = authHeader.split(' ')[1];
+
+        // Verify token with Clerk
+        let verifiedToken;
+        try {
+            verifiedToken = await verifyToken(token, {
+                secretKey: process.env.CLERK_SECRET_KEY,
+            });
+        } catch (err) {
+            console.error('Token verification failed:', err);
+            return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401 });
+        }
+
+        const authenticatedUserId = verifiedToken.sub;
         const body = await req.json();
         const { cardId, userId } = body;
+
+        // Ensure the userId in body matches the authenticated user
+        if (userId && userId !== authenticatedUserId) {
+            return new Response(JSON.stringify({ error: 'Unauthorized user mismatch' }), { status: 403 });
+        }
+
+        const effectiveUserId = authenticatedUserId;
 
         if (!cardId) {
             return new Response(JSON.stringify({ error: 'Missing cardId' }), { status: 400 });
         }
 
-        if (!userId) {
-            return new Response(JSON.stringify({ error: 'Missing userId' }), { status: 400 });
-        }
-
-        console.log('Attempting to delete card:', cardId, 'for user:', userId);
+        console.log('Attempting to delete card:', cardId, 'for user:', effectiveUserId);
 
         // Verify the card exists and belongs to the user
         const existingCards = await db
@@ -31,7 +54,7 @@ export default async function handler(req: Request) {
             .from(businessCards)
             .where(and(
                 eq(businessCards.id, cardId),
-                eq(businessCards.userId, userId)
+                eq(businessCards.userId, effectiveUserId)
             ))
             .limit(1);
 
@@ -40,21 +63,25 @@ export default async function handler(req: Request) {
             return new Response(JSON.stringify({ error: 'Card not found or unauthorized' }), { status: 404 });
         }
 
-        console.log('Card found, deleting analytics first...');
+        console.log('Card found, deleting associated analytics data...');
 
-        // First, delete all analytics data (card_views) for this card
-        await db
-            .delete(cardViews)
-            .where(eq(cardViews.cardId, cardId));
+        // Import cardClicks to ensure it's handled even if cascade isn't fully active yet
+        const { cardClicks } = await import('../src/db/schema.js');
 
-        console.log('Analytics deleted, now deleting card...');
+        // Delete all analytics data (views and clicks) for this card
+        await Promise.all([
+            db.delete(cardViews).where(eq(cardViews.cardId, cardId)),
+            db.delete(cardClicks).where(eq(cardClicks.cardId, cardId))
+        ]);
 
-        // Now delete the card (and its slug automatically since it's in the same row)
+        console.log('Analytics data (views and clicks) deleted, now deleting card...');
+
+        // Now delete the card
         await db
             .delete(businessCards)
             .where(and(
                 eq(businessCards.id, cardId),
-                eq(businessCards.userId, userId)
+                eq(businessCards.userId, effectiveUserId)
             ));
 
         console.log('Card deleted successfully');

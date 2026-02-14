@@ -19,7 +19,7 @@ export const businessCards = pgTable('business_cards', {
 
 export const cardViews = pgTable('card_views', {
     id: uuid('id').defaultRandom().primaryKey(),
-    cardId: integer('card_id').references(() => businessCards.id),
+    cardId: integer('card_id').references(() => businessCards.id, { onDelete: 'cascade' }),
     viewedAt: timestamp('viewed_at').defaultNow(),
     referrer: text('referrer'),
     userAgent: text('user_agent'),
@@ -35,7 +35,7 @@ export const cardViews = pgTable('card_views', {
 
 export const cardClicks = pgTable('card_clicks', {
     id: uuid('id').defaultRandom().primaryKey(),
-    cardId: integer('card_id').references(() => businessCards.id),
+    cardId: integer('card_id').references(() => businessCards.id, { onDelete: 'cascade' }),
     type: text('type').notNull(), // 'social', 'contact', 'link'
     targetInfo: text('target_info'), // e.g. 'instagram', 'phone_primary', or full URL
     clickedAt: timestamp('clicked_at').defaultNow(),
