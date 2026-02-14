@@ -16,3 +16,11 @@ export const businessCards = pgTable('business_cards', {
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
 });
+
+export const cardViews = pgTable('card_views', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    cardId: serial('card_id').references(() => businessCards.id),
+    viewedAt: timestamp('viewed_at').defaultNow(),
+    referrer: text('referrer'),
+    userAgent: text('user_agent'),
+});

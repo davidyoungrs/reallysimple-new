@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { UserButton } from '@clerk/clerk-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { UserButton, useUser } from '@clerk/clerk-react';
 import { initialCardData, type CardData } from '../types';
 import { BusinessCard } from './BusinessCard';
 import { Editor } from './Editor';
 import { loadFromUrl, saveToUrl } from '../utils/urlState';
 import { useTranslation } from 'react-i18next';
-import { ChevronUp, ChevronDown, ArrowLeft } from 'lucide-react';
+import { ChevronUp, ChevronDown, ArrowLeft, Copy, Check, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LanguageSelector } from './LanguageSelector';
 
@@ -81,9 +81,21 @@ const ScaleToFit = ({ children }: { children: React.ReactNode }) => {
 
 export function CardBuilder() {
     const { t } = useTranslation();
+    const { user } = useUser();
     const [isEditorOpen, setIsEditorOpen] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [showShareCard, setShowShareCard] = useState(false);
+    const [copyStatus, setCopyStatus] = useState(false);
+    const [savedCards, setSavedCards] = useState<any[]>([]);
+    const [isLoadingCards, setIsLoadingCards] = useState(false);
+    const [showCardsDropdown, setShowCardsDropdown] = useState(false);
+    const [currentCardId, setCurrentCardId] = useState<number | null>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const shareCardRef = useRef<HTMLDivElement>(null);
+    const [deleteConfirmCard, setDeleteConfirmCard] = useState<{ id: number, name: string } | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [slugStatus, setSlugStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'reserved' | 'invalid'>('idle');
 
     // Initialize state from URL or default
     const [data, setData] = useState<CardData>(() => {
@@ -99,35 +111,234 @@ export function CardBuilder() {
         return () => clearTimeout(timer);
     }, [data]);
 
+    // Load saved cards from database
+    const loadSavedCards = async () => {
+        setIsLoadingCards(true);
+        try {
+            const token = await window.Clerk?.session?.getToken();
+            if (!token) return;
+
+            const response = await fetch('/api/get-cards', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token} `,
+                },
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                setSavedCards(result.cards || []);
+            }
+        } catch (error) {
+            console.error('Error loading cards:', error);
+        } finally {
+            setIsLoadingCards(false);
+        }
+    };
+
+    // Load a specific card
+    const handleLoadCard = (card: any) => {
+        // Merge the slug from the database into the card data
+        setData({ ...card.data, slug: card.slug });
+        setCurrentCardId(card.id);
+        setShowCardsDropdown(false);
+    };
+
+    // Load new/blank card
+    const handleNewCard = () => {
+        setData(initialCardData);
+        setCurrentCardId(null);
+        setShowCardsDropdown(false);
+    };
+
+    // Delete a card
+    const handleDeleteCard = async (cardId: number) => {
+        setIsDeleting(true);
+        try {
+            const userId = user?.id;
+            if (!userId) {
+                throw new Error('Not authenticated');
+            }
+
+            const response = await fetch('/api/delete-card', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ cardId, userId }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete card');
+            }
+
+            // If we deleted the currently loaded card, reset to new card
+            if (currentCardId === cardId) {
+                setData(initialCardData);
+                setCurrentCardId(null);
+            }
+
+            // Refresh the cards list
+            await loadSavedCards();
+
+            // Close confirmation dialog
+            setDeleteConfirmCard(null);
+
+            // Show success message
+            setSaveStatus('success');
+            setTimeout(() => setSaveStatus('idle'), 2000);
+
+        } catch (error) {
+            console.error('Error deleting card:', error);
+            setSaveStatus('error');
+            setTimeout(() => setSaveStatus('idle'), 3000);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    // Load saved cards on mount
+    useEffect(() => {
+        loadSavedCards();
+    }, []);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setShowCardsDropdown(false);
+            }
+            // Close share card dropdown when clicking outside
+            if (shareCardRef.current && !shareCardRef.current.contains(event.target as Node)) {
+                setShowShareCard(false);
+            }
+        };
+
+        if (showCardsDropdown || showShareCard) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showCardsDropdown, showShareCard]);
+
     // Save card to database
     const handleSaveCard = async () => {
+        // Check if user is trying to create a new card when they already have 2
+        if (!currentCardId && savedCards.length >= 2) {
+            setSaveStatus('error');
+            alert('You can only save up to 2 cards. Please load an existing card to update it, or delete one first.');
+            setTimeout(() => setSaveStatus('idle'), 3000);
+            return;
+        }
+
         setIsSaving(true);
         setSaveStatus('idle');
 
         try {
-            // Get Clerk session token
-            const token = await window.Clerk?.session?.getToken();
-
-            if (!token) {
+            const userId = user?.id;
+            if (!userId) {
                 throw new Error('Not authenticated');
+            }
+
+            // Check if slug is provided and validate it before saving
+            if (data.slug) {
+                const params = new URLSearchParams({ slug: data.slug });
+                if (currentCardId) {
+                    params.append('cardId', currentCardId.toString());
+                }
+
+                const slugCheckResponse = await fetch(`/api/check-slug?${params}`);
+                const slugCheckData = await slugCheckResponse.json();
+
+                if (!slugCheckData.available) {
+                    // Slug is taken, show error with suggestion
+                    const suggestion = slugCheckData.suggestion || `${data.slug}-2`;
+                    const useSuggestion = confirm(
+                        `The slug "${data.slug}" is already taken.\n\nWould you like to use "${suggestion}" instead?\n\nClick OK to use the suggestion, or Cancel to change it manually.`
+                    );
+
+                    if (useSuggestion) {
+                        // Update the slug with the suggestion and retry save
+                        const updatedData = { ...data, slug: suggestion };
+                        setData(updatedData);
+
+                        // Retry save with the new slug
+                        const retryResponse = await fetch('/api/save-card', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ cardData: updatedData, cardId: currentCardId, userId }),
+                        });
+
+                        if (!retryResponse.ok) {
+                            const retryError = await retryResponse.json();
+                            throw new Error(retryError.error || 'Failed to save card');
+                        }
+
+                        const retryResult = await retryResponse.json();
+                        setSaveStatus('success');
+                        setTimeout(() => setSaveStatus('idle'), 3000);
+                        if (retryResult.card && !currentCardId) {
+                            setCurrentCardId(retryResult.card.id);
+                        }
+                        loadSavedCards();
+                        setIsSaving(false);
+                        return;
+                    } else {
+                        // User cancelled, don't save
+                        setIsSaving(false);
+                        setSaveStatus('error');
+                        setTimeout(() => setSaveStatus('idle'), 3000);
+                        return;
+                    }
+                }
             }
 
             const response = await fetch('/api/save-card', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify({ cardData: data }),
+                body: JSON.stringify({ cardData: data, cardId: currentCardId, userId }),
             });
 
             if (!response.ok) {
                 const error = await response.json();
+
+                // Special handling for slug already taken
+                if (error.error === 'Slug already taken' && error.suggestion) {
+                    const useSuggestion = confirm(
+                        `The slug "${data.slug}" is already taken.\n\nWould you like to use "${error.suggestion}" instead?\n\nClick OK to use the suggestion, or Cancel to change it manually.`
+                    );
+
+                    if (useSuggestion) {
+                        // Update the slug with the suggestion and try saving again
+                        setData({ ...data, slug: error.suggestion });
+                        setIsSaving(false);
+                        return; // User can click save again with the new slug
+                    } else {
+                        setIsSaving(false);
+                        setSaveStatus('error');
+                        setTimeout(() => setSaveStatus('idle'), 3000);
+                        return;
+                    }
+                }
+
                 throw new Error(error.error || 'Failed to save card');
             }
 
+            const result = await response.json();
             setSaveStatus('success');
             setTimeout(() => setSaveStatus('idle'), 3000);
+            // Set the current card ID if it was a new card
+            if (result.card && !currentCardId) {
+                setCurrentCardId(result.card.id);
+            }
+            // Reload cards list after successful save
+            loadSavedCards();
         } catch (error: any) {
             console.error('Error saving card:', error);
             setSaveStatus('error');
@@ -148,25 +359,141 @@ export function CardBuilder() {
                 </Link>
             </div>
 
-            {/* Right Side: Save Button, User Profile & Language Switcher */}
-            <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
-                <button
-                    onClick={handleSaveCard}
-                    disabled={isSaving}
-                    className={`px-4 py-2 rounded-lg font-medium transition-all shadow-md ${saveStatus === 'success'
-                        ? 'bg-green-500 text-white'
-                        : saveStatus === 'error'
-                            ? 'bg-red-500 text-white'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                        } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                    {isSaving ? t('Saving...') : saveStatus === 'success' ? t('Saved!') : saveStatus === 'error' ? t('Error') : t('Save Card')}
-                </button>
+            {/* Right Side: User Profile, Language Switcher, Load Card, Save Button */}
+            <div className="fixed top-4 right-4 z-50 flex flex-col items-end gap-2">
+                {/* Top Row: Avatar and Language */}
+                <div className="flex items-center gap-2">
+                    <LanguageSelector />
 
-                <LanguageSelector />
+                    <div className="bg-white/90 backdrop-blur-md p-1.5 rounded-lg shadow-md border border-gray-200">
+                        <UserButton afterSignOutUrl="/" />
+                    </div>
+                </div>
 
-                <div className="bg-white/90 backdrop-blur-md p-1.5 rounded-lg shadow-md border border-gray-200">
-                    <UserButton afterSignOutUrl="/" />
+                {/* Button Container - Fixed width to prevent expansion */}
+                <div className="space-y-3">
+                    {/* Load Card Dropdown */}
+                    <div className="relative w-full" ref={dropdownRef}>
+                        <button
+                            onClick={() => setShowCardsDropdown(!showCardsDropdown)}
+                            className="w-full px-4 py-2 rounded-lg font-medium transition-all shadow-md bg-gray-600 text-white hover:bg-gray-700"
+                        >
+                            {t('Load Card')}
+                        </button>
+
+                        {showCardsDropdown && (
+                            <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 max-h-96 overflow-y-auto">
+                                {/* New Card Option */}
+                                <button
+                                    onClick={handleNewCard}
+                                    disabled={savedCards.length >= 2 && !currentCardId}
+                                    className={`w - full text - left px - 4 py - 3 hover: bg - gray - 50 border - b border - gray - 200 flex items - center gap - 2 ${savedCards.length >= 2 && !currentCardId ? 'opacity-50 cursor-not-allowed' : ''
+                                        } `}
+                                    title={savedCards.length >= 2 && !currentCardId ? 'Maximum 2 cards allowed' : ''}
+                                >
+                                    <span className="font-medium text-blue-600">{t('New Card')}</span>
+                                    {savedCards.length >= 2 && !currentCardId && (
+                                        <span className="text-xs text-gray-500 ml-auto">(Limit reached)</span>
+                                    )}
+                                </button>
+
+                                {/* Saved Cards List */}
+                                {isLoadingCards ? (
+                                    <div className="px-4 py-3 text-gray-500 text-sm">{t('Loading...')}</div>
+                                ) : savedCards.length === 0 ? (
+                                    <div className="px-4 py-3 text-gray-500 text-sm">{t('No saved cards')}</div>
+                                ) : (
+                                    savedCards.map((card) => (
+                                        <div
+                                            key={card.id}
+                                            onClick={() => handleLoadCard(card)}
+                                            className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-200 last:border-b-0 flex items-center justify-between group cursor-pointer"
+                                        >
+                                            <div className="flex-1">
+                                                <div className="font-medium text-gray-900">
+                                                    {card.data.name || card.data.fullName || t('Untitled Card')}
+                                                </div>
+                                                {card.slug && (
+                                                    <div className="text-xs text-blue-600 font-mono mt-0.5">
+                                                        {window.location.host}/card/{card.slug}
+                                                    </div>
+                                                )}
+                                                <div className="text-xs text-gray-500 mt-1">
+                                                    {t('Last updated')}: {new Date(card.updatedAt).toLocaleDateString()}
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setDeleteConfirmCard({ id: card.id, name: card.data.name || card.data.fullName || t('Untitled Card') });
+                                                }}
+                                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                                title={t('Delete Card')}
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    <button
+                        onClick={handleSaveCard}
+                        disabled={isSaving || slugStatus === 'taken' || slugStatus === 'reserved' || slugStatus === 'invalid'}
+                        className={`w-full px-4 py-2 rounded-lg font-medium transition-all shadow-md ${saveStatus === 'success'
+                            ? 'bg-green-500 text-white'
+                            : saveStatus === 'error' || slugStatus === 'taken' || slugStatus === 'reserved' || slugStatus === 'invalid'
+                                ? 'bg-red-500 text-white'
+                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                            } ${isSaving || slugStatus === 'taken' || slugStatus === 'reserved' || slugStatus === 'invalid' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                        {isSaving ? t('Saving...') : saveStatus === 'success' ? t('Saved!') : saveStatus === 'error' ? t('Error') : t('Save Card')}
+                    </button>
+
+                    {/* Share Card Button - Only show if card has a slug */}
+                    {data.slug && (
+                        <button
+                            onClick={() => setShowShareCard(!showShareCard)}
+                            className="w-full px-4 py-2 rounded-lg font-medium transition-all shadow-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 flex items-center justify-center gap-2"
+                        >
+                            <Copy className="w-4 h-4" />
+                            {t('Share Card')}
+                        </button>
+                    )}
+                </div>
+
+                {/* Share Card Dropdown - Outside button container */}
+                <div ref={shareCardRef}>
+                    {showShareCard && data.slug && (
+                        <div className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3 shadow-sm mt-3">
+                            <div className="text-xs font-medium text-blue-900 mb-2">{t('Public URL')}</div>
+                            <div className="flex items-center gap-2">
+                                <div className="flex-1 bg-white rounded px-3 py-2 text-sm text-gray-700 font-mono truncate border border-blue-100">
+                                    {window.location.origin}/card/{data.slug}
+                                </div>
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            await navigator.clipboard.writeText(`${window.location.origin}/card/${data.slug}`);
+                                            setCopyStatus(true);
+                                            setTimeout(() => setCopyStatus(false), 2000);
+                                        } catch (err) {
+                                            console.error('Failed to copy:', err);
+                                        }
+                                    }}
+                                    className="p-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex-shrink-0"
+                                    title={t('Copy Link')}
+                                >
+                                    {copyStatus ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                </button>
+                            </div>
+                            {copyStatus && (
+                                <div className="text-xs text-green-600 mt-1 font-medium">✓ {t('Link Copied!')}</div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -183,10 +510,10 @@ export function CardBuilder() {
 
             {/* Editor Side */}
             <div className={`
-        fixed inset-x-0 bottom-0 z-40 bg-white rounded-t-3xl shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-in-out border-t border-gray-200
-        h-[75vh] md:h-screen md:relative md:inset-auto md:w-1/3 lg:w-1/4 md:rounded-none md:shadow-none md:border-r md:border-t-0 md:bg-white md:translate-y-0
+        fixed inset - x - 0 bottom - 0 z - 40 bg - white rounded - t - 3xl shadow - [0_ - 4px_20px_ - 5px_rgba(0, 0, 0, 0.1)] transition - transform duration - 300 ease -in -out border - t border - gray - 200
+h - [75vh] md: h - screen md:relative md: inset - auto md: w - 1 / 3 lg: w - 1 / 4 md: rounded - none md: shadow - none md: border - r md: border - t - 0 md: bg - white md: translate - y - 0
         ${isEditorOpen ? 'translate-y-0' : 'translate-y-[calc(100%-80px)] md:translate-y-0'}
-      `}>
+`}>
                 {/* Mobile Handle */}
                 <div
                     className="w-full flex justify-center p-3 md:hidden cursor-pointer"
@@ -196,7 +523,7 @@ export function CardBuilder() {
                 </div>
 
                 <div className="h-full overflow-y-auto pb-24 md:pb-0">
-                    <Editor data={data} onChange={setData} />
+                    <Editor data={data} onChange={setData} currentCardId={currentCardId} onSlugStatusChange={setSlugStatus} />
                 </div>
             </div>
 
@@ -212,6 +539,47 @@ export function CardBuilder() {
                     {t('Preview')}
                 </div>
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            {deleteConfirmCard && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('Confirm Delete')}</h3>
+                        <p className="text-gray-600 mb-4">
+                            {t('Are you sure you want to delete this card? This action cannot be undone.')}
+                        </p>
+                        <div className="bg-gray-50 rounded p-3 mb-4">
+                            <div className="font-medium text-gray-900">{deleteConfirmCard.name}</div>
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setDeleteConfirmCard(null)}
+                                disabled={isDeleting}
+                                className="flex-1 px-4 py-2 rounded-lg font-medium transition-all bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+                            >
+                                {t('Cancel')}
+                            </button>
+                            <button
+                                onClick={() => handleDeleteCard(deleteConfirmCard.id)}
+                                disabled={isDeleting}
+                                className="flex-1 px-4 py-2 rounded-lg font-medium transition-all bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {isDeleting ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                        {t('Deleting...')}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Trash2 className="w-4 h-4" />
+                                        {t('Delete')}
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

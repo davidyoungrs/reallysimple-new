@@ -1,0 +1,137 @@
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { BusinessCard } from './BusinessCard';
+import { type CardData } from '../types';
+import { useTranslation } from 'react-i18next';
+import { ArrowLeft } from 'lucide-react';
+
+export function PublicCard() {
+    const { slug } = useParams<{ slug: string }>();
+    const { t } = useTranslation();
+    const [cardData, setCardData] = useState<CardData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchCard = async () => {
+            if (!slug) {
+                setError('No slug provided');
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/get-card-by-slug/${slug}`);
+
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        setError('Card not found');
+                    } else {
+                        setError('Failed to load card');
+                    }
+                    setLoading(false);
+                    return;
+                }
+
+                const result = await response.json();
+                setCardData(result.card.data);
+                setLoading(false);
+
+                // Track view (fire-and-forget)
+                fetch('/api/track-view', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slug }),
+                }).catch(err => console.error('Failed to track view:', err));
+
+            } catch (err) {
+                console.error('Error fetching card:', err);
+                setError('Failed to load card');
+                setLoading(false);
+            }
+        };
+
+        fetchCard();
+    }, [slug]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">{t('Loading...')}</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error || !cardData) {
+        return (
+            <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+                    <div className="text-6xl mb-4">🔍</div>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Card Not Found</h1>
+                    <p className="text-gray-600 mb-6">
+                        The business card you're looking for doesn't exist or has been removed.
+                    </p>
+                    <Link
+                        to="/"
+                        className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        {t('Go Home')}
+                    </Link>
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                        <p className="text-sm text-gray-500 mb-3">Want to create your own digital business card?</p>
+                        <Link
+                            to="/app"
+                            className="inline-block bg-gray-100 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                        >
+                            Create Your Card
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-gray-100 flex flex-col">
+            {/* Header */}
+            <div className="bg-white border-b border-gray-200 py-4 px-6">
+                <div className="max-w-4xl mx-auto flex items-center justify-between">
+                    <Link to="/" className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
+                        <ArrowLeft className="w-4 h-4" />
+                        <span className="font-medium">{t('Home')}</span>
+                    </Link>
+                    <Link
+                        to="/app"
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
+                    >
+                        Create Your Own
+                    </Link>
+                </div>
+            </div>
+
+            {/* Card Display */}
+            <div className="flex-1 flex items-center justify-center p-6">
+                <div className="w-full max-w-md">
+                    <BusinessCard data={cardData} />
+                </div>
+            </div>
+
+            {/* Footer CTA */}
+            <div className="bg-white border-t border-gray-200 py-6 px-6">
+                <div className="max-w-4xl mx-auto text-center">
+                    <p className="text-gray-600 mb-3">Impressed? Create your own digital business card in minutes.</p>
+                    <Link
+                        to="/app"
+                        className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                    >
+                        Get Started Free
+                    </Link>
+                </div>
+            </div>
+        </div>
+    );
+}

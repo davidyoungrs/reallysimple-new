@@ -32,6 +32,7 @@ export interface CardData {
     font: string;
     phoneNumbers: PhoneNumber[];
     socialLinks: SocialLink[];
+    slug?: string; // Custom URL slug
     layoutMode: 'classic' | 'modern-left' | 'hero';
     stickyActionBar: boolean;
     embeds: { type: 'youtube' | 'spotify' | 'vimeo' | 'tiktok' | 'instagram'; url: string; title?: string }[];

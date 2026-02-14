@@ -2,6 +2,7 @@ import { type CardData, type SocialLink, type SocialPlatform, type PhoneNumber }
 import { Plus, Trash2, GripVertical, Upload, X, Music, Youtube, Instagram, Video } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SlugCustomizer } from './SlugCustomizer';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -206,9 +207,11 @@ function SortablePhoneNumber({ phone, handlePhoneChange, removePhoneNumber, t }:
 interface EditorProps {
     data: CardData;
     onChange: (data: CardData) => void;
+    currentCardId?: number | null;
+    onSlugStatusChange?: (status: 'idle' | 'checking' | 'available' | 'taken' | 'reserved' | 'invalid') => void;
 }
 
-export function Editor({ data, onChange }: EditorProps) {
+export function Editor({ data, onChange, currentCardId, onSlugStatusChange }: EditorProps) {
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const logoInputRef = useRef<HTMLInputElement>(null);
@@ -429,6 +432,15 @@ export function Editor({ data, onChange }: EditorProps) {
                             className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none"
                         />
                     </div>
+
+                    {/* Slug Customization */}
+                    <SlugCustomizer
+                        value={data.slug}
+                        onChange={(slug) => handleChange('slug', slug)}
+                        fullName={data.fullName}
+                        currentCardId={currentCardId}
+                        onStatusChange={onSlugStatusChange}
+                    />
                 </div>
             </div>
 

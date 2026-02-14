@@ -1,6 +1,5 @@
 import { db } from '../src/db/index.js';
 import { businessCards } from '../src/db/schema.js';
-import { verifyToken } from '@clerk/backend';
 import { eq } from 'drizzle-orm';
 
 export const config = {
@@ -13,44 +12,52 @@ export default async function handler(req: Request) {
     }
 
     try {
-        const authHeader = req.headers.get('Authorization');
-        if (!authHeader?.startsWith('Bearer ')) {
-            return new Response(JSON.stringify({ error: 'Missing authorization header' }), { status: 401 });
-        }
-
-        const token = authHeader.split(' ')[1];
-
-        // Verify token with Clerk
-        let verifiedToken;
-        try {
-            verifiedToken = await verifyToken(token, {
-                secretKey: process.env.CLERK_SECRET_KEY,
-            });
-        } catch (err) {
-            console.error('Token verification failed:', err);
-            return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401 });
-        }
-
-        const userId = verifiedToken.sub;
         const body = await req.json();
-        const { cardData } = body;
+        const { cardData, cardId, userId } = body;
 
         if (!cardData) {
             return new Response(JSON.stringify({ error: 'Missing card data' }), { status: 400 });
         }
 
-        // Check if user already has a card
-        const existingCard = await db.select().from(businessCards).where(eq(businessCards.userId, userId)).limit(1);
+        if (!userId) {
+            return new Response(JSON.stringify({ error: 'Missing userId' }), { status: 400 });
+        }
+
+        // Get slug from cardData
+        let slug = cardData.slug;
+
+        console.log('Saving card with slug:', slug, 'cardId:', cardId, 'userId:', userId);
+
+        // Check slug uniqueness if provided
+        if (slug) {
+            const existingCard = await db.select()
+                .from(businessCards)
+                .where(eq(businessCards.slug, slug))
+                .limit(1);
+
+            // If slug exists and it's not the current card, reject it
+            if (existingCard.length > 0 && existingCard[0].id !== cardId) {
+                console.log('Slug already taken by card:', existingCard[0].id);
+                return new Response(JSON.stringify({
+                    error: 'Slug already taken',
+                    suggestion: `${slug}-2`
+                }), {
+                    status: 400,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
+        }
 
         let result;
-        if (existingCard.length > 0) {
-            // Update existing card
+        if (cardId) {
+            // Update existing card by ID
             result = await db.update(businessCards)
                 .set({
                     data: cardData,
+                    slug: slug || null,
                     updatedAt: new Date(),
                 })
-                .where(eq(businessCards.userId, userId))
+                .where(eq(businessCards.id, cardId))
                 .returning();
         } else {
             // Create new card
@@ -58,6 +65,7 @@ export default async function handler(req: Request) {
                 .values({
                     userId: userId,
                     data: cardData,
+                    slug: slug || null,
                 })
                 .returning();
         }

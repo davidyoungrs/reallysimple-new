@@ -16,17 +16,47 @@ export default defineConfig({
       configureServer(server) {
         server.middlewares.use(async (req, res, next) => {
           if (req.url?.startsWith('/api/')) {
-            const apiPath = req.url.replace('/api/', '');
+            // Extract the base API route (first segment after /api/)
+            const urlParts = req.url.split('?')[0].split('/').filter(Boolean);
+            // Remove 'api' prefix
+            urlParts.shift();
+
+            // Try to find the API handler
+            // First try the exact path, then try just the first segment
+            let apiPath = urlParts.join('/');
+            let handler;
 
             try {
-              // Dynamically import the API handler
-              const handler = await import(`./api/${apiPath}.ts`);
+              // Try exact match first
+              handler = await import(`./api/${apiPath}.ts`);
+            } catch (e) {
+              // If that fails, try just the first segment (for dynamic routes)
+              if (urlParts.length > 1) {
+                try {
+                  apiPath = urlParts[0];
+                  handler = await import(`./api/${apiPath}.ts`);
+                } catch (e2) {
+                  console.error('API handler not found:', req.url);
+                  res.statusCode = 404;
+                  res.setHeader('Content-Type', 'application/json');
+                  res.end(JSON.stringify({ error: 'API endpoint not found' }));
+                  return;
+                }
+              } else {
+                console.error('API handler not found:', req.url);
+                res.statusCode = 404;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ error: 'API endpoint not found' }));
+                return;
+              }
+            }
 
+            try {
               // Convert Node.js request to Web Request
               const url = `http://${req.headers.host}${req.url}`;
               let body = '';
 
-              if (req.method === 'POST' || req.method === 'PUT') {
+              if (req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE') {
                 body = await new Promise<string>((resolve) => {
                   let data = '';
                   req.on('data', chunk => data += chunk);

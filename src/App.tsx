@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage } from './components/LandingPage';
 import { CardBuilder } from './components/CardBuilder';
+import { PublicCard } from './components/PublicCard';
 import { RequireVerifiedEmail } from './components/RequireVerifiedEmail';
 
 import { SignedIn, SignedOut, RedirectToSignIn, SignIn, SignUp } from '@clerk/clerk-react';
@@ -15,6 +16,9 @@ function App() {
         {/* Auth Routes */}
         <Route path="/sign-in/*" element={<div className="flex justify-center items-center min-h-screen bg-gray-50"><SignIn routing="path" path="/sign-in" /></div>} />
         <Route path="/sign-up/*" element={<div className="flex justify-center items-center min-h-screen bg-gray-50"><SignUp routing="path" path="/sign-up" /></div>} />
+
+        {/* Public Card Route */}
+        <Route path="/card/:slug" element={<PublicCard />} />
 
         {/* Protected App Route */}
         <Route
