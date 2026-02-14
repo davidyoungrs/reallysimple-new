@@ -116,22 +116,6 @@ export function PublicCard() {
 
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col">
-            {/* Header */}
-            <div className="bg-white border-b border-gray-200 py-4 px-6">
-                <div className="max-w-4xl mx-auto flex items-center justify-between">
-                    <Link to="/" className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
-                        <ArrowLeft className="w-4 h-4" />
-                        <span className="font-medium">{t('Home')}</span>
-                    </Link>
-                    <Link
-                        to="/app"
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
-                    >
-                        Create Your Own
-                    </Link>
-                </div>
-            </div>
-
             {/* Card Display */}
             <div className="flex-1 flex items-center justify-center p-6">
                 <div className="w-full max-w-md">
@@ -140,11 +124,11 @@ export function PublicCard() {
             </div>
 
             {/* Footer CTA */}
-            <div className="bg-white border-t border-gray-200 py-6 px-6">
+            <div className={`bg-white border-t border-gray-200 py-6 px-6 ${cardData.stickyActionBar ? 'mb-20' : ''}`}>
                 <div className="max-w-4xl mx-auto text-center">
                     <p className="text-gray-600 mb-3">Impressed? Create your own digital business card in minutes.</p>
                     <Link
-                        to="/app"
+                        to="/"
                         className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
                     >
                         Get Started Free

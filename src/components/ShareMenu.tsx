@@ -1,15 +1,20 @@
 import { useState } from 'react';
-import { Share2, Copy, Download, ExternalLink, Check } from 'lucide-react';
+import { Share2, Copy, Download, ExternalLink, Check, Mail } from 'lucide-react';
 import { downloadQRCodeAsSVG, downloadQRCodeAsPNG } from '../utils/qrDownload';
+import { useTranslation } from 'react-i18next';
+import type { CardData } from '../types';
+import { EmailSignatureModal } from './EmailSignatureModal';
 
 interface ShareMenuProps {
     cardSlug: string;
-    cardName: string;
+    data: CardData;
 }
 
-export function ShareMenu({ cardSlug }: ShareMenuProps) {
+export function ShareMenu({ cardSlug, data }: ShareMenuProps) {
+    const { t } = useTranslation();
     const [showMenu, setShowMenu] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [showSignatureModal, setShowSignatureModal] = useState(false);
 
     const publicUrl = `${window.location.origin}/card/${cardSlug}`;
     const filename = cardSlug || 'business-card';
@@ -47,14 +52,19 @@ export function ShareMenu({ cardSlug }: ShareMenuProps) {
         setShowMenu(false);
     };
 
+    const handleEmailSignature = () => {
+        setShowSignatureModal(true);
+        setShowMenu(false);
+    };
+
     return (
         <div className="relative">
             <button
                 onClick={() => setShowMenu(!showMenu)}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
             >
                 <Share2 className="w-4 h-4" />
-                Share
+                {t('Share')}
             </button>
 
             {showMenu && (
@@ -74,14 +84,24 @@ export function ShareMenu({ cardSlug }: ShareMenuProps) {
                             {copied ? (
                                 <>
                                     <Check className="w-4 h-4 text-green-600" />
-                                    <span className="text-green-600">Link copied!</span>
+                                    <span className="text-green-600">{t('Link copied!')}</span>
                                 </>
                             ) : (
                                 <>
                                     <Copy className="w-4 h-4 text-gray-600" />
-                                    <span>Copy public link</span>
+                                    <span>{t('Copy public link')}</span>
                                 </>
                             )}
+                        </button>
+
+                        <div className="border-t border-gray-200 my-1" />
+
+                        <button
+                            onClick={handleEmailSignature}
+                            className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-3 text-sm"
+                        >
+                            <Mail className="w-4 h-4 text-gray-600" />
+                            <span>{t('Email Signature')}</span>
                         </button>
 
                         <div className="border-t border-gray-200 my-1" />
@@ -91,7 +111,7 @@ export function ShareMenu({ cardSlug }: ShareMenuProps) {
                             className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-3 text-sm"
                         >
                             <Download className="w-4 h-4 text-gray-600" />
-                            <span>Download QR (SVG)</span>
+                            <span>{t('Download QR (SVG)')}</span>
                         </button>
 
                         <button
@@ -99,20 +119,33 @@ export function ShareMenu({ cardSlug }: ShareMenuProps) {
                             className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-3 text-sm"
                         >
                             <Download className="w-4 h-4 text-gray-600" />
-                            <span>Download QR (PNG)</span>
+                            <span>{t('Download QR (PNG)')}</span>
                         </button>
 
                         <div className="border-t border-gray-200 my-1" />
 
                         <button
-                            onClick={handleViewPublic}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                handleViewPublic();
+                            }}
                             className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-3 text-sm"
                         >
                             <ExternalLink className="w-4 h-4 text-gray-600" />
-                            <span>View public card</span>
+                            <span>{t('View public card')}</span>
                         </button>
                     </div>
                 </>
+            )}
+
+            {showSignatureModal && (
+                <EmailSignatureModal
+                    data={data}
+                    cardUrl={publicUrl}
+                    isOpen={showSignatureModal}
+                    onClose={() => setShowSignatureModal(false)}
+                />
             )}
         </div>
     );

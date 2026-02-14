@@ -11,6 +11,7 @@ import { LanguageSelector } from './LanguageSelector';
 
 interface Card {
     id: number;
+    uid: string;
     slug: string;
     data: any;
     viewCount: number;
@@ -190,10 +191,10 @@ export function Dashboard() {
                                     </div>
 
                                     {/* Actions */}
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
                                         <button
                                             onClick={() => handleEdit(card)}
-                                            className="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                                            className="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap"
                                         >
                                             <Edit className="w-4 h-4" />
                                             {t('Edit')}
@@ -208,7 +209,10 @@ export function Dashboard() {
                                                 >
                                                     <BarChart2 className="w-4 h-4" />
                                                 </button>
-                                                <ShareMenu cardSlug={card.slug} cardName={card.data.name || card.data.fullName} />
+                                                <ShareMenu
+                                                    cardSlug={card.slug || card.uid}
+                                                    data={card.data}
+                                                />
                                             </>
                                         )}
 

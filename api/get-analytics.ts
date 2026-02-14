@@ -1,6 +1,6 @@
 import { db } from '../src/db/index.js';
 import { businessCards, cardViews, cardClicks } from '../src/db/schema.js';
-import { eq, sql, and, gte, desc } from 'drizzle-orm';
+import { eq, sql, and, gte, lte, desc } from 'drizzle-orm';
 
 export default async function handler(request: Request) {
     if (request.method !== 'GET') {
@@ -38,9 +38,23 @@ export default async function handler(request: Request) {
             cardId = parseInt(cardIdParam!);
         }
 
-        // Calculate date range (last 30 days)
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        let startDate: Date;
+        let endDate: Date;
+
+        const startDateParam = url.searchParams.get('startDate');
+        const endDateParam = url.searchParams.get('endDate');
+
+        if (startDateParam && endDateParam) {
+            startDate = new Date(startDateParam);
+            endDate = new Date(endDateParam);
+            // Set end date to end of day
+            endDate.setHours(23, 59, 59, 999);
+        } else {
+            // Default to last 30 days
+            endDate = new Date();
+            startDate = new Date();
+            startDate.setDate(endDate.getDate() - 30);
+        }
 
         // Fetch daily views
         const dailyViews = await db.select({
@@ -50,7 +64,8 @@ export default async function handler(request: Request) {
             .from(cardViews)
             .where(and(
                 eq(cardViews.cardId, cardId),
-                gte(cardViews.viewedAt, thirtyDaysAgo)
+                gte(cardViews.viewedAt, startDate),
+                lte(cardViews.viewedAt, endDate)
             ))
             .groupBy(sql`DATE_TRUNC('day', ${cardViews.viewedAt})`)
             .orderBy(sql`DATE_TRUNC('day', ${cardViews.viewedAt})`);
@@ -63,7 +78,8 @@ export default async function handler(request: Request) {
             .from(cardClicks)
             .where(and(
                 eq(cardClicks.cardId, cardId),
-                gte(cardClicks.clickedAt, thirtyDaysAgo)
+                gte(cardClicks.clickedAt, startDate),
+                lte(cardClicks.clickedAt, endDate)
             ))
             .groupBy(sql`DATE_TRUNC('day', ${cardClicks.clickedAt})`)
             .orderBy(sql`DATE_TRUNC('day', ${cardClicks.clickedAt})`);
@@ -77,44 +93,32 @@ export default async function handler(request: Request) {
             .from(cardClicks)
             .where(and(
                 eq(cardClicks.cardId, cardId),
-                gte(cardClicks.clickedAt, thirtyDaysAgo)
+                gte(cardClicks.clickedAt, startDate),
+                lte(cardClicks.clickedAt, endDate)
             ))
             .groupBy(cardClicks.type, cardClicks.targetInfo)
             .orderBy(desc(sql`count(*)`));
-
-        // Aggregate total stats
-        // Note: We could do separate counts, but aggregating from the breakdown is close enough for the "last 30 days" view.
-        // If we want lifetime stats, we'd need separate queries without the date filter.
-        // For dashboard, let's show "Last 30 Days" stats.
 
         const totalViews = dailyViews.reduce((acc, curr) => acc + Number(curr.count), 0);
         const totalClicks = dailyClicks.reduce((acc, curr) => acc + Number(curr.count), 0);
         const ctr = totalViews > 0 ? (totalClicks / totalViews) * 100 : 0;
 
-        // Merge daily stats into a single array for the chart
-        // Create a map of date -> { views, clicks }
-        const statsMap = new Map<string, { date: string, views: number, clicks: number }>();
-
-        // Initialize with all dates in range (optional, but good for charts to avoid gaps)
-        for (let i = 0; i < 30; i++) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            const dateStr = d.toISOString().split('T')[0] + ' 00:00:00+00'; // Match postgres truncated format approximately or just use YYYY-MM-DD
-            // Postgres DATE_TRUNC returns timestamp string. Let's rely on simple string matching YYYY-MM-DD usually works if cast to date.
-            // Actually, DATE_TRUNC('day', ...) returns '2023-10-27 00:00:00+00'.
-            // Let's normalize everything to YYYY-MM-DD.
-        }
-
-        // Simpler approach: Just merge existing data. Recharts handles gaps if configured, but better to fill 0s.
-        // Let's iterate 30 days backwards.
+        // Generate date array for charts
         const mergedStats = [];
-        for (let i = 29; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            const dateKey = d.toISOString().split('T')[0]; // YYYY-MM-DD
+        // Calculate number of days in range
+        const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-            // Find matches. We need to parse the DB date string.
-            // DB returns: "2023-10-27 00:00:00+00" (usually)
+        // Limit daily stats generation to avoid huge loops if someone requests a large range
+        // For very large ranges, we might want to group by month, but for now stick to daily up to reasonable limits (e.g. 90 days)
+        // or just iterate 
+
+        for (let i = 0; i <= diffDays; i++) {
+            const d = new Date(startDate);
+            d.setDate(d.getDate() + i);
+            if (d > endDate) break;
+
+            const dateKey = d.toISOString().split('T')[0]; // YYYY-MM-DD
 
             const viewStat = dailyViews.find(v => v.date.startsWith(dateKey));
             const clickStat = dailyClicks.find(c => c.date.startsWith(dateKey));
