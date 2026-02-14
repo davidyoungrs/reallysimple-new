@@ -407,14 +407,22 @@ export function CardBuilder() {
                                         <div
                                             key={card.id}
                                             onClick={() => handleLoadCard(card)}
-                                            className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-200 last:border-b-0 flex items-center justify-between group cursor-pointer"
+                                            className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-200 last:border-b-0 flex items-center gap-3 group cursor-pointer"
                                         >
-                                            <div className="flex-1">
-                                                <div className="font-medium text-gray-900">
+                                            {/* Card Preview Thumbnail */}
+                                            <div className="flex-shrink-0 w-20 h-28 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                                                <div className="scale-[0.2] origin-top-left" style={{ width: '500px', height: '700px' }}>
+                                                    <BusinessCard data={card.data} />
+                                                </div>
+                                            </div>
+
+                                            {/* Card Info */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-medium text-gray-900 truncate">
                                                     {card.data.name || card.data.fullName || t('Untitled Card')}
                                                 </div>
                                                 {card.slug && (
-                                                    <div className="text-xs text-blue-600 font-mono mt-0.5">
+                                                    <div className="text-xs text-blue-600 font-mono mt-0.5 truncate">
                                                         {window.location.host}/card/{card.slug}
                                                     </div>
                                                 )}
