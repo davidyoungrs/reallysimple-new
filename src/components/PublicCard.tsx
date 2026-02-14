@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { BusinessCard } from './BusinessCard';
 import { type CardData } from '../types';
@@ -11,6 +11,7 @@ export function PublicCard() {
     const [cardData, setCardData] = useState<CardData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const lastTrackedSlug = useRef<string | null>(null);
 
     useEffect(() => {
         const fetchCard = async () => {
@@ -37,12 +38,15 @@ export function PublicCard() {
                 setCardData(result.card.data);
                 setLoading(false);
 
-                // Track view (fire-and-forget)
-                fetch('/api/track-view', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ slug }),
-                }).catch(err => console.error('Failed to track view:', err));
+                // Track view (fire-and-forget) - prevent double counting in StrictMode
+                if (lastTrackedSlug.current !== slug) {
+                    lastTrackedSlug.current = slug;
+                    fetch('/api/track-view', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ slug }),
+                    }).catch(err => console.error('Failed to track view:', err));
+                }
 
             } catch (err) {
                 console.error('Error fetching card:', err);
@@ -53,6 +57,21 @@ export function PublicCard() {
 
         fetchCard();
     }, [slug]);
+
+    const handleLinkClick = (type: string, targetInfo: string) => {
+        if (!slug || !type) {
+            console.error('Missing slug or type for tracking:', { slug, type, targetInfo });
+            return;
+        }
+
+        console.log('Tracking click:', { slug, type, targetInfo });
+
+        fetch('/api/track-click', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug, type, targetInfo }),
+        }).catch(err => console.error('Failed to track click:', err));
+    };
 
     if (loading) {
         return (
@@ -116,7 +135,7 @@ export function PublicCard() {
             {/* Card Display */}
             <div className="flex-1 flex items-center justify-center p-6">
                 <div className="w-full max-w-md">
-                    <BusinessCard data={cardData} />
+                    <BusinessCard data={cardData} onLinkClick={handleLinkClick} />
                 </div>
             </div>
 

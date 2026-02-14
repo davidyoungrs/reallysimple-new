@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage } from './components/LandingPage';
 import { CardBuilder } from './components/CardBuilder';
+import { Dashboard } from './components/Dashboard';
 import { PublicCard } from './components/PublicCard';
 import { RequireVerifiedEmail } from './components/RequireVerifiedEmail';
 
@@ -28,6 +29,23 @@ function App() {
               <SignedIn>
                 <RequireVerifiedEmail>
                   <CardBuilder />
+                </RequireVerifiedEmail>
+              </SignedIn>
+              <SignedOut>
+                <RedirectToSignIn />
+              </SignedOut>
+            </>
+          }
+        />
+
+        {/* Protected Dashboard Route */}
+        <Route
+          path="/dashboard"
+          element={
+            <>
+              <SignedIn>
+                <RequireVerifiedEmail>
+                  <Dashboard />
                 </RequireVerifiedEmail>
               </SignedIn>
               <SignedOut>

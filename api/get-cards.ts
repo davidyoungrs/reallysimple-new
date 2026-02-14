@@ -1,7 +1,7 @@
 import { db } from '../src/db/index.js';
-import { businessCards } from '../src/db/schema.js';
+import { businessCards, cardViews } from '../src/db/schema.js';
 import { verifyToken } from '@clerk/backend';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
 
 export const config = {
     runtime: 'edge',
@@ -33,11 +33,23 @@ export default async function handler(req: Request) {
 
         const userId = verifiedToken.sub;
 
-        // Fetch all cards for this user, sorted by most recently updated
+        // Fetch all cards for this user with view counts
         const cards = await db
-            .select()
+            .select({
+                id: businessCards.id,
+                uid: businessCards.uid,
+                userId: businessCards.userId,
+                data: businessCards.data,
+                slug: businessCards.slug,
+                isActive: businessCards.isActive,
+                createdAt: businessCards.createdAt,
+                updatedAt: businessCards.updatedAt,
+                viewCount: sql<number>`cast(count(${cardViews.id}) as integer)`,
+            })
             .from(businessCards)
+            .leftJoin(cardViews, eq(cardViews.cardId, businessCards.id))
             .where(eq(businessCards.userId, userId))
+            .groupBy(businessCards.id)
             .orderBy(desc(businessCards.updatedAt));
 
         return new Response(JSON.stringify({ success: true, cards }), {

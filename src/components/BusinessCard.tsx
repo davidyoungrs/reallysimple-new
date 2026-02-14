@@ -3,14 +3,15 @@ import { SocialLinks } from './SocialLinks';
 import { Download, Wallet, Loader2, Phone } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { downloadVCard } from '../utils/vcard';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface BusinessCardProps {
     data: CardData;
+    onLinkClick?: (type: string, targetInfo: string) => void;
 }
 
-export function BusinessCard({ data }: BusinessCardProps) {
+export function BusinessCard({ data, onLinkClick }: BusinessCardProps) {
     const { t } = useTranslation();
     const {
         fullName,
@@ -28,12 +29,50 @@ export function BusinessCard({ data }: BusinessCardProps) {
         embeds
     } = data;
     const [loading, setLoading] = useState(false);
+    const observerRef = useRef<IntersectionObserver | null>(null);
+    const trackedEmbedsRef = useRef<Set<string>>(new Set());
+
+    // Initialize IntersectionObserver for media tracking
+    useEffect(() => {
+        if (!onLinkClick || (data.embeds || []).length === 0) return;
+
+        observerRef.current = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    const type = entry.target.getAttribute('data-embed-type');
+                    const id = entry.target.getAttribute('data-embed-id');
+
+                    if (type && id && !trackedEmbedsRef.current.has(id)) {
+                        // Track media view
+                        onLinkClick('media', type);
+                        trackedEmbedsRef.current.add(id);
+
+                        // Stop observing this element once tracked
+                        observerRef.current?.unobserve(entry.target);
+                    }
+                }
+            });
+        }, {
+            threshold: 0.5, // 50% of the item must be visible
+            rootMargin: '0px'
+        });
+
+        // Observe all embed containers
+        const embedElements = document.querySelectorAll('.media-embed-container');
+        embedElements.forEach(el => observerRef.current?.observe(el));
+
+        return () => {
+            observerRef.current?.disconnect();
+        };
+    }, [data.embeds, onLinkClick]);
 
     const handleDownloadVCard = () => {
+        if (onLinkClick) onLinkClick('contact', 'vcard');
         downloadVCard(data);
     };
 
     const handleAddToWallet = async () => {
+        if (onLinkClick) onLinkClick('contact', 'wallet');
         setLoading(true);
         try {
             const emailLink = socialLinks.find(l => l.platform === 'email');
@@ -74,12 +113,13 @@ export function BusinessCard({ data }: BusinessCardProps) {
         }
     };
 
+
+
     return (
         <div
             className="relative w-full max-w-md mx-auto min-h-[600px] overflow-hidden rounded-3xl shadow-2xl transition-all duration-500 hover:shadow-3xl"
             style={{ fontFamily: data.font || 'Inter' }}
         >
-            {/* Background with dynamic gradient based on theme color */}
             {/* Background with dynamic gradient based on theme color */}
             <div
                 className="absolute inset-0 bg-gradient-to-br from-gray-900 to-black animate-gradient-slow"
@@ -90,8 +130,8 @@ export function BusinessCard({ data }: BusinessCardProps) {
                 }}
             />
 
-            {/* Texture overlay (noise) for premium feel */}
-            <div className="absolute inset-0 opacity-20 contrast-125 mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+            {/* Texture overlay (noise) for premium feel - Commented out as user perceived it as a watermark */}
+            {/* <div className="absolute inset-0 opacity-20 contrast-125 mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div> */}
 
             {/* Glassmorphism Container */}
             <div
@@ -152,7 +192,15 @@ export function BusinessCard({ data }: BusinessCardProps) {
 
                 {/* Social Links */}
                 <div className="w-full">
-                    <SocialLinks links={socialLinks} className="mb-8" iconColor={data.textColor} />
+                    <SocialLinks
+                        links={socialLinks}
+                        className="mb-8"
+                        iconColor={data.textColor}
+                        onLinkClick={(platform, url) => {
+                            const target = platform === 'custom' ? url : platform;
+                            onLinkClick?.('social', target);
+                        }}
+                    />
                 </div>
 
                 {/* Phone Numbers */}
@@ -162,6 +210,7 @@ export function BusinessCard({ data }: BusinessCardProps) {
                             <a
                                 key={phone.id}
                                 href={`tel:${phone.number}`}
+                                onClick={() => onLinkClick?.('contact', 'phone')}
                                 className="flex items-center gap-4 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 p-4 rounded-2xl transition-all hover:scale-[1.02] group"
                             >
                                 <div className="bg-white/20 p-2.5 rounded-full group-hover:bg-white/30 transition-colors">
@@ -203,7 +252,12 @@ export function BusinessCard({ data }: BusinessCardProps) {
                         if (!embedUrl) return null;
 
                         return (
-                            <div key={index} className="w-full mb-6 overflow-hidden rounded-2xl shadow-lg border border-white/10 bg-black/20">
+                            <div
+                                key={index}
+                                className="media-embed-container w-full mb-6 overflow-hidden rounded-2xl shadow-lg border border-white/10 bg-black/20"
+                                data-embed-type={embed.type}
+                                data-embed-id={`embed-${index}`}
+                            >
                                 {embed.title && <div className="px-4 py-2 text-sm font-medium text-white/80 bg-black/40">{embed.title}</div>}
                                 {embed.type === 'youtube' ? (
                                     <iframe
@@ -254,26 +308,6 @@ export function BusinessCard({ data }: BusinessCardProps) {
                             </div>
                         );
                     })}
-
-                    {/* Sections (Accordion) */}
-                    {/* Sections (Accordion) - Temporarily Disabled
-                    {(data.sections || []).map((section) => (
-                        <div key={section.id} className="w-full mb-4">
-                            <details className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden transition-all duration-300 open:bg-white/10">
-                                <summary className="flex items-center justify-between p-4 cursor-pointer list-none text-white font-medium hover:bg-white/5 transition-colors">
-                                    <span>{section.title}</span>
-                                    <span className="transform group-open:rotate-180 transition-transform duration-300">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
-                                    </span>
-                                </summary>
-                                <div className="p-4 pt-0 space-y-3 border-t border-white/10">
-                                    <div className="h-4"></div>
-                                    <SocialLinks links={section.links} />
-                                </div>
-                            </details>
-                        </div>
-                    ))}
-                    */}
 
                     {data.stickyActionBar ? (
                         <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent z-50 backdrop-blur-sm">
@@ -343,3 +377,5 @@ export function BusinessCard({ data }: BusinessCardProps) {
         </div >
     );
 }
+
+

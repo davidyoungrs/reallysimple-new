@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, jsonb, boolean, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, timestamp, jsonb, boolean, uuid, integer } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
     id: serial('id').primaryKey(),
@@ -19,8 +19,17 @@ export const businessCards = pgTable('business_cards', {
 
 export const cardViews = pgTable('card_views', {
     id: uuid('id').defaultRandom().primaryKey(),
-    cardId: serial('card_id').references(() => businessCards.id),
+    cardId: integer('card_id').references(() => businessCards.id),
     viewedAt: timestamp('viewed_at').defaultNow(),
     referrer: text('referrer'),
+    userAgent: text('user_agent'),
+});
+
+export const cardClicks = pgTable('card_clicks', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    cardId: integer('card_id').references(() => businessCards.id),
+    type: text('type').notNull(), // 'social', 'contact', 'link'
+    targetInfo: text('target_info'), // e.g. 'instagram', 'phone_primary', or full URL
+    clickedAt: timestamp('clicked_at').defaultNow(),
     userAgent: text('user_agent'),
 });

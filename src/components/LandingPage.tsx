@@ -22,7 +22,7 @@ export const LandingPage = () => {
                             <LanguageSelector />
 
                             <SignedIn>
-                                <Link to="/app" className="hidden sm:inline-flex bg-gray-900 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors">
+                                <Link to="/dashboard" className="hidden sm:inline-flex bg-gray-900 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors">
                                     {t('Dashboard')}
                                 </Link>
                                 <UserButton afterSignOutUrl="/" />

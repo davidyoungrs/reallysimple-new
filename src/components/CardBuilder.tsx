@@ -5,8 +5,8 @@ import { BusinessCard } from './BusinessCard';
 import { Editor } from './Editor';
 import { loadFromUrl, saveToUrl } from '../utils/urlState';
 import { useTranslation } from 'react-i18next';
-import { ChevronUp, ChevronDown, ArrowLeft, Copy, Check, Trash2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { ChevronUp, ChevronDown, ArrowLeft, Copy, Check, Trash2, Eye, LayoutDashboard } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 import { LanguageSelector } from './LanguageSelector';
 
 // Declare Clerk on window for TypeScript
@@ -82,6 +82,7 @@ const ScaleToFit = ({ children }: { children: React.ReactNode }) => {
 export function CardBuilder() {
     const { t } = useTranslation();
     const { user } = useUser();
+    const location = useLocation();
     const [isEditorOpen, setIsEditorOpen] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -142,7 +143,21 @@ export function CardBuilder() {
         setData({ ...card.data, slug: card.slug });
         setCurrentCardId(card.id);
         setShowCardsDropdown(false);
+        setCurrentCardId(card.id);
+        setShowCardsDropdown(false);
     };
+
+    // Handle navigation from Dashboard
+    useEffect(() => {
+        if (location.state?.cardId && savedCards.length > 0) {
+            const cardToLoad = savedCards.find(c => c.id === location.state.cardId);
+            if (cardToLoad) {
+                handleLoadCard(cardToLoad);
+                // Clear state to prevent reloading
+                window.history.replaceState({}, document.title);
+            }
+        }
+    }, [location.state, savedCards]);
 
     // Load new/blank card
     const handleNewCard = () => {
@@ -372,6 +387,15 @@ export function CardBuilder() {
 
                 {/* Button Container - Fixed width to prevent expansion */}
                 <div className="space-y-3">
+                    {/* Dashboard Link */}
+                    <Link
+                        to="/dashboard"
+                        className="w-full px-4 py-2 rounded-lg font-medium transition-all shadow-md bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 flex items-center justify-center gap-2"
+                    >
+                        <LayoutDashboard className="w-4 h-4" />
+                        {t('My Dashboard')}
+                    </Link>
+
                     {/* Load Card Dropdown */}
                     <div className="relative w-full" ref={dropdownRef}>
                         <button
@@ -418,8 +442,15 @@ export function CardBuilder() {
 
                                             {/* Card Info */}
                                             <div className="flex-1 min-w-0">
-                                                <div className="font-medium text-gray-900 truncate">
-                                                    {card.data.name || card.data.fullName || t('Untitled Card')}
+                                                <div className="flex items-center gap-2">
+                                                    <div className="font-medium text-gray-900 truncate">
+                                                        {card.data.name || card.data.fullName || t('Untitled Card')}
+                                                    </div>
+                                                    {/* View Count Badge */}
+                                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-xs font-medium flex-shrink-0">
+                                                        <Eye className="w-3 h-3" />
+                                                        <span>{card.viewCount || 0}</span>
+                                                    </div>
                                                 </div>
                                                 {card.slug && (
                                                     <div className="text-xs text-blue-600 font-mono mt-0.5 truncate">
