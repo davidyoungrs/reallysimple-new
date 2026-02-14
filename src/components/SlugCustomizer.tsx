@@ -20,6 +20,13 @@ export function SlugCustomizer({ value, onChange, fullName, currentCardId, onSta
     const [suggestion, setSuggestion] = useState('');
     const [debouncedSlug, setDebouncedSlug] = useState(slug);
 
+    // Sync slug state when value prop changes (e.g., when loading a saved card)
+    useEffect(() => {
+        if (value !== undefined && value !== slug) {
+            setSlug(value);
+        }
+    }, [value]);
+
     // Auto-generate slug from name if empty
     useEffect(() => {
         if (!slug && fullName) {
