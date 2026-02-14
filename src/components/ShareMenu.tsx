@@ -17,6 +17,7 @@ export function ShareMenu({ cardSlug, data }: ShareMenuProps) {
     const [showSignatureModal, setShowSignatureModal] = useState(false);
 
     const publicUrl = `${window.location.origin}/card/${cardSlug}`;
+    const qrUrl = `${publicUrl}?src=qr`;
     const filename = cardSlug || 'business-card';
 
     const handleCopyLink = async () => {
@@ -31,7 +32,7 @@ export function ShareMenu({ cardSlug, data }: ShareMenuProps) {
 
     const handleDownloadSVG = async () => {
         try {
-            await downloadQRCodeAsSVG(publicUrl, `qr-${filename}`);
+            await downloadQRCodeAsSVG(qrUrl, `qr-${filename}`);
             setShowMenu(false);
         } catch (error) {
             console.error('Failed to download SVG:', error);
@@ -40,7 +41,7 @@ export function ShareMenu({ cardSlug, data }: ShareMenuProps) {
 
     const handleDownloadPNG = async () => {
         try {
-            await downloadQRCodeAsPNG(publicUrl, `qr-${filename}`);
+            await downloadQRCodeAsPNG(qrUrl, `qr-${filename}`);
             setShowMenu(false);
         } catch (error) {
             console.error('Failed to download PNG:', error);

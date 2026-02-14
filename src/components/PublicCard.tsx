@@ -22,6 +22,10 @@ export function PublicCard() {
             }
 
             try {
+                // Get source from search params
+                const searchParams = new URLSearchParams(window.location.search);
+                const source = searchParams.get('src') || 'direct';
+
                 const response = await fetch(`/api/get-card-by-slug/${slug}`);
 
                 if (!response.ok) {
@@ -44,7 +48,7 @@ export function PublicCard() {
                     fetch('/api/track-view', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ slug }),
+                        body: JSON.stringify({ slug, source }),
                     }).catch(err => console.error('Failed to track view:', err));
                 }
 

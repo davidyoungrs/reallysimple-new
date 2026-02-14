@@ -131,6 +131,51 @@ export default async function handler(request: Request) {
             });
         }
 
+        // Fetch geographic distribution (most recent 100 views with coordinates)
+        const geoStats = await db.select({
+            city: cardViews.city,
+            region: cardViews.region,
+            country: cardViews.country,
+            latitude: cardViews.latitude,
+            longitude: cardViews.longitude,
+            viewedAt: cardViews.viewedAt,
+        })
+            .from(cardViews)
+            .where(and(
+                eq(cardViews.cardId, cardId),
+                gte(cardViews.viewedAt, startDate),
+                lte(cardViews.viewedAt, endDate),
+                sql`${cardViews.latitude} IS NOT NULL`
+            ))
+            .orderBy(desc(cardViews.viewedAt))
+            .limit(100);
+
+        // Fetch device distribution
+        const deviceStats = await db.select({
+            deviceType: cardViews.deviceType,
+            count: sql<number>`count(*)`
+        })
+            .from(cardViews)
+            .where(and(
+                eq(cardViews.cardId, cardId),
+                gte(cardViews.viewedAt, startDate),
+                lte(cardViews.viewedAt, endDate)
+            ))
+            .groupBy(cardViews.deviceType);
+
+        // Fetch source distribution
+        const sourceStats = await db.select({
+            source: cardViews.source,
+            count: sql<number>`count(*)`
+        })
+            .from(cardViews)
+            .where(and(
+                eq(cardViews.cardId, cardId),
+                gte(cardViews.viewedAt, startDate),
+                lte(cardViews.viewedAt, endDate)
+            ))
+            .groupBy(cardViews.source);
+
         return new Response(JSON.stringify({
             totalViews,
             totalClicks,
@@ -139,6 +184,20 @@ export default async function handler(request: Request) {
             clickBreakdown: clickBreakdown.map(item => ({
                 platform: item.targetInfo,
                 type: item.type,
+                count: Number(item.count)
+            })),
+            geoStats: geoStats.map(item => ({
+                ...item,
+                // Ensure coordinates are numbers for the frontend
+                latitude: item.latitude ? parseFloat(item.latitude) : null,
+                longitude: item.longitude ? parseFloat(item.longitude) : null,
+            })),
+            deviceStats: deviceStats.map(item => ({
+                type: item.deviceType || 'unknown',
+                count: Number(item.count)
+            })),
+            sourceStats: sourceStats.map(item => ({
+                source: item.source || 'direct',
                 count: Number(item.count)
             }))
         }), {

@@ -23,6 +23,14 @@ export const cardViews = pgTable('card_views', {
     viewedAt: timestamp('viewed_at').defaultNow(),
     referrer: text('referrer'),
     userAgent: text('user_agent'),
+    city: text('city'),
+    region: text('region'),
+    country: text('country'),
+    latitude: text('latitude'),
+    longitude: text('longitude'),
+    ipAddress: text('ip_address'),
+    deviceType: text('device_type'), // 'mobile', 'tablet', 'desktop'
+    source: text('source'), // e.g. 'qr', 'direct', 'signature'
 });
 
 export const cardClicks = pgTable('card_clicks', {

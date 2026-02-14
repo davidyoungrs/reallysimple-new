@@ -9,12 +9,30 @@ import {
     ResponsiveContainer,
     BarChart,
     Bar,
-    Legend
+    Legend,
+    PieChart,
+    Pie,
+    Cell
 } from 'recharts';
-import { Loader2, TrendingUp, MousePointerClick, Eye, Calendar, Download, FileDown, ChevronDown } from 'lucide-react';
+import { Loader2, TrendingUp, MousePointerClick, Eye, Calendar, Download, FileDown, ChevronDown, Map as MapIcon, Globe, Smartphone, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
 import i18n from '../i18n';
 import { exportToCSV, exportToJSON } from '../utils/analyticsExport';
+
+// Fix for default marker icons in Leaflet + Vite
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+    iconUrl: icon,
+    shadowUrl: iconShadow,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41]
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
 
 interface AnalyticsData {
     totalViews: number;
@@ -33,6 +51,22 @@ interface AnalyticsData {
     }>;
     mediaImpressions?: Array<{
         type: string;
+        count: number;
+    }>;
+    geoStats?: Array<{
+        city: string | null;
+        region: string | null;
+        country: string | null;
+        latitude: number | null;
+        longitude: number | null;
+        viewedAt: string;
+    }>;
+    deviceStats?: Array<{
+        type: string;
+        count: number;
+    }>;
+    sourceStats?: Array<{
+        source: string;
         count: number;
     }>;
 }
@@ -399,6 +433,168 @@ export function AnalyticsDashboard({ slug, cardId, onClose }: AnalyticsDashboard
                                     />
                                 </LineChart>
                             </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* Geographic Distribution Map */}
+                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm col-span-1 lg:col-span-2">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                <Globe className="w-5 h-5 text-blue-500" />
+                                {t('Geographic Distribution')}
+                            </h3>
+                            <span className="text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                                {data.geoStats?.length || 0} {t('Recent Locations')}
+                            </span>
+                        </div>
+
+                        <div className="h-[400px] w-full rounded-xl overflow-hidden border border-gray-100 relative z-0">
+                            {data.geoStats && data.geoStats.length > 0 ? (
+                                <MapContainer
+                                    center={[20, 0]}
+                                    zoom={2}
+                                    scrollWheelZoom={false}
+                                    className="h-full w-full"
+                                >
+                                    <TileLayer
+                                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                    />
+                                    {data.geoStats.map((stat, idx) => (
+                                        stat.latitude && stat.longitude && (
+                                            <Marker key={idx} position={[stat.latitude, stat.longitude]}>
+                                                <Popup>
+                                                    <div className="p-1">
+                                                        <div className="font-bold text-gray-900 mb-1">
+                                                            {stat.city ? `${stat.city}, ` : ''}
+                                                            {stat.country || t('Unknown Location')}
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 flex flex-col gap-0.5">
+                                                            <span>{new Date(stat.viewedAt).toLocaleDateString(i18n.language, { dateStyle: 'medium' })}</span>
+                                                            <span className="font-medium text-blue-600">
+                                                                {new Date(stat.viewedAt).toLocaleTimeString(i18n.language, { timeStyle: 'short' })}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </Popup>
+                                            </Marker>
+                                        )
+                                    ))}
+                                </MapContainer>
+                            ) : (
+                                <div className="h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50">
+                                    <MapIcon className="w-12 h-12 mb-3 opacity-20" />
+                                    <p>{t('No location data available for this range')}</p>
+                                    <p className="text-xs mt-1">{t('Only views from the last 100 card accesses are shown')}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Device & Source Distribution */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 col-span-1 lg:col-span-2">
+                        {/* Device Types */}
+                        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                                <Smartphone className="w-5 h-5 text-purple-500" />
+                                {t('Device Distribution')}
+                            </h3>
+                            <div className="h-64">
+                                {data.deviceStats && data.deviceStats.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={data.deviceStats}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={60}
+                                                outerRadius={80}
+                                                paddingAngle={5}
+                                                dataKey="count"
+                                                nameKey="type"
+                                            >
+                                                {data.deviceStats.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={
+                                                        entry.type === 'mobile' ? '#3B82F6' :
+                                                            entry.type === 'tablet' ? '#8B5CF6' :
+                                                                '#94A3B8'
+                                                    } />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip
+                                                formatter={(val: any, name: any) => [val, t(`device.${name}`) || name]}
+                                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                            />
+                                            <Legend
+                                                formatter={(value) => t(`device.${value}`) || value}
+                                                verticalAlign="bottom"
+                                            />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="h-full flex items-center justify-center text-gray-400">
+                                        {t('No device data')}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Traffic Sources */}
+                        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                                <Zap className="w-5 h-5 text-yellow-500" />
+                                {t('Traffic Sources')}
+                            </h3>
+                            <div className="h-64">
+                                {data.sourceStats && data.sourceStats.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart
+                                            data={data.sourceStats}
+                                            layout="vertical"
+                                            margin={{ left: 20, right: 30, top: 0, bottom: 0 }}
+                                        >
+                                            <XAxis type="number" hide />
+                                            <YAxis
+                                                dataKey="source"
+                                                type="category"
+                                                axisLine={false}
+                                                tickLine={false}
+                                                tick={(props) => {
+                                                    const { x, y, payload } = props;
+                                                    return (
+                                                        <text x={x} y={y} dy={4} textAnchor="end" className="text-xs font-medium text-gray-600">
+                                                            {t(`source.${payload.value}`) || payload.value}
+                                                        </text>
+                                                    );
+                                                }}
+                                                width={80}
+                                            />
+                                            <Tooltip
+                                                cursor={{ fill: 'transparent' }}
+                                                formatter={(val: any, _name: any, props: any) => [val, t(`source.${props.payload.source}`) || props.payload.source]}
+                                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                            />
+                                            <Bar
+                                                dataKey="count"
+                                                radius={[0, 4, 4, 0]}
+                                                barSize={32}
+                                            >
+                                                {data.sourceStats.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={
+                                                        entry.source === 'qr' ? '#F59E0B' :
+                                                            entry.source === 'direct' ? '#10B981' :
+                                                                '#3B82F6'
+                                                    } />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="h-full flex items-center justify-center text-gray-400">
+                                        {t('No source data')}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 

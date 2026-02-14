@@ -166,8 +166,20 @@ const resources = {
             "Custom Range": "Custom Range",
             "Export": "Export",
             "Export as CSV": "Export as CSV",
-            "Export as JSON": "Export as JSON"
-
+            "Export as JSON": "Export as JSON",
+            "Geographic Distribution": "Geographic Distribution",
+            "Recent Locations": "Recent Locations",
+            "Unknown Location": "Unknown Location",
+            "No location data available for this range": "No location data available for this range",
+            "Only views from the last 100 card accesses are shown": "Only views from the last 100 card accesses are shown",
+            "Device Distribution": "Device Distribution",
+            "Traffic Sources": "Traffic Sources",
+            "device.mobile": "Mobile",
+            "device.desktop": "Desktop",
+            "device.tablet": "Tablet",
+            "source.qr": "QR Code",
+            "source.direct": "Direct",
+            "source.other": "Other"
         }
     },
     es: {
@@ -296,8 +308,20 @@ const resources = {
             "Custom Range": "Rango personalizado",
             "Export": "Exportar",
             "Export as CSV": "Exportar como CSV",
-            "Export as JSON": "Exportar como JSON"
-
+            "Export as JSON": "Exportar como JSON",
+            "Geographic Distribution": "Distribución geográfica",
+            "Recent Locations": "Ubicaciones recientes",
+            "Unknown Location": "Ubicación desconocida",
+            "No location data available for this range": "No hay datos de ubicación disponibles para este rango",
+            "Only views from the last 100 card accesses are shown": "Solo se muestran las vistas de los últimos 100 accesos a la tarjeta",
+            "Device Distribution": "Distribución por Dispositivo",
+            "Traffic Sources": "Fuentes de Tráfico",
+            "device.mobile": "Móvil",
+            "device.desktop": "Escritorio",
+            "device.tablet": "Tableta",
+            "source.qr": "Código QR",
+            "source.direct": "Directo",
+            "source.other": "Otro"
         }
     },
     fr: {
@@ -557,7 +581,19 @@ const resources = {
             "Export": "Exportieren",
             "Export as CSV": "Als CSV exportieren",
             "Export as JSON": "Als JSON exportieren",
-
+            "Geographic Distribution": "Geografische Verteilung",
+            "Recent Locations": "Aktuelle Standorte",
+            "Unknown Location": "Unbekannter Standort",
+            "No location data available for this range": "Keine Standortdaten für diesen Zeitraum verfügbar",
+            "Only views from the last 100 card accesses are shown": "Nur Aufrufe der letzten 100 Kartenzugriffe werden angezeigt",
+            "Device Distribution": "Geräteverteilung",
+            "Traffic Sources": "Verkehrsquellen",
+            "device.mobile": "Mobil",
+            "device.desktop": "Desktop",
+            "device.tablet": "Tablet",
+            "source.qr": "QR-Code",
+            "source.direct": "Direkt",
+            "source.other": "Andere"
         }
     },
     ar: {
@@ -687,7 +723,19 @@ const resources = {
             "Export": "تصدير",
             "Export as CSV": "تصدير كملف CSV",
             "Export as JSON": "تصدير كملف JSON",
-
+            "Geographic Distribution": "التوزيع الجغرافي",
+            "Recent Locations": "المواقع الأخيرة",
+            "Unknown Location": "موقع غير معروف",
+            "No location data available for this range": "لا تتوفر بيانات موقع لهذا النطاق",
+            "Only views from the last 100 card accesses are shown": "يتم عرض المشاهدات من آخر 100 وصول للبطاقة فقط",
+            "Device Distribution": "توزيع الأجهزة",
+            "Traffic Sources": "مصادر حركة المرور",
+            "device.mobile": "جوال",
+            "device.desktop": "سطح المكتب",
+            "device.tablet": "تابلت",
+            "source.qr": "رمز QR",
+            "source.direct": "مباشر",
+            "source.other": "أخرى"
         }
     },
     ru: {
@@ -817,8 +865,19 @@ const resources = {
             "Export": "Экспорт",
             "Export as CSV": "Экспорт в CSV",
             "Export as JSON": "Экспорт в JSON",
-
-
+            "Geographic Distribution": "Географическое распределение",
+            "Recent Locations": "Последние местоположения",
+            "Unknown Location": "Неизвестное местоположение",
+            "No location data available for this range": "Нет данных о местоположении для этого диапазона",
+            "Only views from the last 100 card accesses are shown": "Показаны только просмотры для последних 100 доступов к карте",
+            "Device Distribution": "Распределение по устройствам",
+            "Traffic Sources": "Источники трафика",
+            "device.mobile": "Мобильный",
+            "device.desktop": "Настольный",
+            "device.tablet": "Планшет",
+            "source.qr": "QR-код",
+            "source.direct": "Прямой",
+            "source.other": "Другое"
         }
     }
 };

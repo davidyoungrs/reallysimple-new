@@ -31,16 +31,41 @@ export default async function handler(req: Request) {
         }
 
         const cardId = cards[0].id;
+        const { source = 'direct' } = body;
 
         // Extract referrer and user agent from headers
         const referrer = req.headers.get('referer') || req.headers.get('referrer') || null;
-        const userAgent = req.headers.get('user-agent') || null;
+        const userAgent = req.headers.get('user-agent') || '';
+
+        // Determine device type from user agent
+        let deviceType = 'desktop';
+        if (/mobile/i.test(userAgent)) {
+            deviceType = 'mobile';
+        } else if (/tablet|ipad/i.test(userAgent)) {
+            deviceType = 'tablet';
+        }
+
+        // Extract geolocation data from Vercel headers
+        const city = req.headers.get('x-vercel-ip-city') || null;
+        const region = req.headers.get('x-vercel-ip-country-region') || null;
+        const country = req.headers.get('x-vercel-ip-country') || null;
+        const latitude = req.headers.get('x-vercel-ip-latitude') || null;
+        const longitude = req.headers.get('x-vercel-ip-longitude') || null;
+        const ipAddress = req.headers.get('x-real-ip') || req.headers.get('x-forwarded-for')?.split(',')[0] || null;
 
         // Insert view record
         await db.insert(cardViews).values({
             cardId,
             referrer,
             userAgent,
+            city,
+            region,
+            country,
+            latitude,
+            longitude,
+            ipAddress,
+            deviceType,
+            source,
         });
 
         return new Response(JSON.stringify({ success: true }), {
