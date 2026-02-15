@@ -13,29 +13,27 @@ const RESERVED_SLUGS = [
     'users', 'new', 'edit', 'delete', 'create',
 ];
 
-export default async function handler(req: Request) {
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'GET') {
-        return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
     try {
-        const url = new URL(req.url);
-        const slug = url.searchParams.get('slug');
-        const currentCardId = url.searchParams.get('cardId'); // Optional: exclude current card from check
+        const slug = req.query.slug as string;
+        const currentCardId = req.query.cardId as string; // Optional: exclude current card from check
 
         if (!slug) {
-            return new Response(JSON.stringify({ error: 'Missing slug parameter' }), { status: 400 });
+            return res.status(400).json({ error: 'Missing slug parameter' });
         }
 
         // Check if slug is reserved
         if (RESERVED_SLUGS.includes(slug.toLowerCase())) {
-            return new Response(JSON.stringify({
+            return res.status(200).json({
                 available: false,
                 reason: 'reserved',
                 suggestion: `${slug}-card`
-            }), {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' },
             });
         }
 
@@ -52,27 +50,21 @@ export default async function handler(req: Request) {
             let counter = 2;
             let suggestion = `${slug}-${counter}`;
 
-            return new Response(JSON.stringify({
+            return res.status(200).json({
                 available: false,
                 reason: 'taken',
                 suggestion
-            }), {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' },
             });
         }
 
         // Slug is available
-        return new Response(JSON.stringify({ available: true }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-        });
+        return res.status(200).json({ available: true });
 
     } catch (error: any) {
         console.error('Error checking slug availability:', error);
-        return new Response(JSON.stringify({
+        return res.status(500).json({
             error: 'Internal server error',
             details: error?.message || 'Unknown error'
-        }), { status: 500 });
+        });
     }
 }

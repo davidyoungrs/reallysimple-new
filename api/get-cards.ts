@@ -7,15 +7,17 @@ import { eq, desc, sql } from 'drizzle-orm';
 //     runtime: 'edge',
 // };
 
-export default async function handler(req: Request) {
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'GET') {
-        return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
     try {
-        const authHeader = req.headers.get('Authorization');
+        const authHeader = req.headers.authorization;
         if (!authHeader?.startsWith('Bearer ')) {
-            return new Response(JSON.stringify({ error: 'Missing authorization header' }), { status: 401 });
+            return res.status(401).json({ error: 'Missing authorization header' });
         }
 
         const token = authHeader.split(' ')[1];
@@ -28,7 +30,7 @@ export default async function handler(req: Request) {
             });
         } catch (err) {
             console.error('Token verification failed:', err);
-            return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401 });
+            return res.status(401).json({ error: 'Invalid token' });
         }
 
         const userId = verifiedToken.sub;
@@ -52,15 +54,10 @@ export default async function handler(req: Request) {
             .groupBy(businessCards.id)
             .orderBy(desc(businessCards.updatedAt));
 
-        return new Response(JSON.stringify({ success: true, cards }), {
-            status: 200,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        return res.status(200).json({ success: true, cards });
 
     } catch (error: any) {
         console.error('Error fetching cards:', error);
-        return new Response(JSON.stringify({ error: 'Internal server error', details: error?.message || 'Unknown error' }), { status: 500 });
+        return res.status(500).json({ error: 'Internal server error', details: error?.message || 'Unknown error' });
     }
 }

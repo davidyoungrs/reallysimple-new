@@ -1,26 +1,27 @@
 import { db } from '../src/db/index.js';
 import { businessCards } from '../src/db/schema.js';
 import { eq } from 'drizzle-orm';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // export const config = {
 //     runtime: 'edge',
 // };
 
-export default async function handler(req: Request) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') {
-        return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
     try {
-        const body = await req.json();
+        const body = req.body;
         const { cardData, cardId, userId } = body;
 
         if (!cardData) {
-            return new Response(JSON.stringify({ error: 'Missing card data' }), { status: 400 });
+            return res.status(400).json({ error: 'Missing card data' });
         }
 
         if (!userId) {
-            return new Response(JSON.stringify({ error: 'Missing userId' }), { status: 400 });
+            return res.status(400).json({ error: 'Missing userId' });
         }
 
         // Get slug from cardData
@@ -38,12 +39,9 @@ export default async function handler(req: Request) {
             // If slug exists and it's not the current card, reject it
             if (existingCard.length > 0 && existingCard[0].id !== cardId) {
                 console.log('Slug already taken by card:', existingCard[0].id);
-                return new Response(JSON.stringify({
+                return res.status(400).json({
                     error: 'Slug already taken',
                     suggestion: `${slug}-2`
-                }), {
-                    status: 400,
-                    headers: { 'Content-Type': 'application/json' }
                 });
             }
         }
@@ -66,19 +64,15 @@ export default async function handler(req: Request) {
                     userId: userId,
                     data: cardData,
                     slug: slug || null,
+                    updatedAt: new Date(),
                 })
                 .returning();
         }
 
-        return new Response(JSON.stringify({ success: true, card: result[0] }), {
-            status: 200,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        return res.status(200).json({ success: true, card: result[0] });
 
     } catch (error: any) {
         console.error('Error saving card:', error);
-        return new Response(JSON.stringify({ error: 'Internal server error', details: error.message }), { status: 500 });
+        return res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 }
