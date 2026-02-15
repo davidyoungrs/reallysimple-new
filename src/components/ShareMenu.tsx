@@ -49,6 +49,34 @@ export function ShareMenu({ cardSlug, data }: ShareMenuProps) {
         }
     };
 
+    const handleAddToGoogleWallet = async () => {
+        setLoadingGoogle(true);
+        try {
+            const response = await fetch('/api/generate-google-pass', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ slug: data.slug }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to generate pass');
+            }
+
+            const { saveUrl } = await response.json();
+            if (saveUrl) {
+                window.open(saveUrl, '_blank');
+            }
+        } catch (error) {
+            console.error('Error generating Google Wallet pass:', error);
+            alert('Failed to generate Google Wallet pass. Please try again.');
+        } finally {
+            setLoadingGoogle(false);
+        }
+    };
+
     const handleDownloadSVG = async () => {
         try {
             await downloadQRCodeAsSVG(qrUrl, `qr-${filename}`);
@@ -208,6 +236,17 @@ export function ShareMenu({ cardSlug, data }: ShareMenuProps) {
                                 {loadingWallet ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wallet className="w-4 h-4" />}
                             </div>
                             <span className="font-medium">{loadingWallet ? t('Creating...') : t('Add to Apple Wallet')}</span>
+                        </button>
+
+                        <button
+                            onClick={handleAddToGoogleWallet}
+                            disabled={loadingGoogle}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors text-gray-700 disabled:opacity-50"
+                        >
+                            <div className="bg-white border border-gray-300 text-black p-1.5 rounded-md">
+                                {loadingGoogle ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wallet className="w-4 h-4" />}
+                            </div>
+                            <span className="font-medium">{loadingGoogle ? t('Opening...') : t('Save to Google Pay')}</span>
                         </button>
 
                         <button

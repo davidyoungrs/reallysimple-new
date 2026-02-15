@@ -145,6 +145,8 @@ const resources = {
             "Share via WhatsApp": "Share via WhatsApp",
             "Email Signature": "Email Signature",
             "Add to Apple Wallet": "Add to Apple Wallet",
+            "Save to Google Pay": "Save to Google Pay",
+            "Opening...": "Opening...",
             "Download vCard": "Download vCard",
 
             "Link copied!": "Link copied!",
@@ -293,6 +295,8 @@ const resources = {
             "Share via WhatsApp": "Compartir por WhatsApp",
             "Email Signature": "Firma de Correo",
             "Add to Apple Wallet": "Añadir a Apple Wallet",
+            "Save to Google Pay": "Guardar en Google Pay",
+            "Opening...": "Abriendo...",
             "Download vCard": "Descargar vCard",
 
             "Link copied!": "¡Enlace copiado!",
@@ -441,6 +445,8 @@ const resources = {
             "Share via WhatsApp": "Partager par WhatsApp",
             "Email Signature": "Signature Email",
             "Add to Apple Wallet": "Ajouter à Apple Wallet",
+            "Save to Google Pay": "Enregistrer sur Google Pay",
+            "Opening...": "Ouverture...",
             "Download vCard": "Télécharger vCard",
 
             "Link copied!": "Lien copié !",
@@ -577,6 +583,8 @@ const resources = {
             "Share via WhatsApp": "Per WhatsApp teilen",
             "Email Signature": "E-Mail-Signatur",
             "Add to Apple Wallet": "Zu Apple Wallet hinzufügen",
+            "Save to Google Pay": "In Google Pay speichern",
+            "Opening...": "Öffnen...",
             "Download vCard": "vCard herunterladen",
 
             "Link copied!": "Link kopiert!",
@@ -724,7 +732,9 @@ const resources = {
             "Share via Email": "مشاركة عبر البريد",
             "Share via WhatsApp": "مشاركة عبر واتساب",
             "Email Signature": "توقيع البريد",
-            "Add to Apple Wallet": "إضافة إلى Apple Wallet",
+            "Add to Apple Wallet": "أضف إلى Apple Wallet",
+            "Save to Google Pay": "حفظ في Google Pay",
+            "Opening...": "جاري الفتح...",
             "Download vCard": "تحميل vCard",
             "Download QR (SVG)": "تحميل QR (SVG)",
             "Download QR (PNG)": "تحميل QR (PNG)",
@@ -873,6 +883,8 @@ const resources = {
             "Share via WhatsApp": "Поделиться в WhatsApp",
             "Email Signature": "Подпись Email",
             "Add to Apple Wallet": "Добавить в Apple Wallet",
+            "Save to Google Pay": "Сохранить в Google Pay",
+            "Opening...": "Открытие...",
             "Download vCard": "Скачать vCard",
 
             "Link copied!": "Ссылка скопирована!",
