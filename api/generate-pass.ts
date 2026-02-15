@@ -142,8 +142,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         pass.backFields.push({
             key: 'card-url',
             label: 'My Digital Card',
-            value: publicCardUrl,
-        });
+            value: 'Open Card',
+            attributedValue: `<a href="${publicCardUrl}">Open Card</a>`,
+        } as any);
 
         // 2. Phone Numbers
         if (data.phoneNumbers && Array.isArray(data.phoneNumbers)) {
@@ -161,20 +162,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             data.socialLinks.forEach((link: any, index: number) => {
                 let label = link.label || link.platform;
                 let value = link.url;
+                let attributedValue = undefined;
 
                 // Capitalize label
                 label = label.charAt(0).toUpperCase() + label.slice(1);
 
-                // Format value for display if possible (e.g. mailto: removal)
                 if (link.platform === 'email') {
+                    // For emails, just show the email address (it's auto-linkable and useful to read)
                     value = value.replace('mailto:', '');
+                } else if (link.platform === 'phone') {
+                    value = value.replace('tel:', '');
+                } else {
+                    // For web links (socials, custom, website), use "Link" text
+                    // Ensure URL is absolute for the href
+                    let href = value;
+                    if (!href.startsWith('http') && !href.startsWith('mailto') && !href.startsWith('tel')) {
+                        href = `https://${href}`;
+                    }
+
+                    attributedValue = `<a href="${href}">Link</a>`;
+                    value = 'Link'; // Fallback text
                 }
 
                 pass.backFields.push({
                     key: `social-${index}`,
                     label: label,
                     value: value,
-                });
+                    attributedValue: attributedValue,
+                } as any);
             });
         }
 
