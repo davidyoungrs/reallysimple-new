@@ -55,6 +55,19 @@ interface SocialLinksProps {
     onLinkClick?: (platform: string, url: string) => void;
 }
 
+// Base URLs for platforms that support username-only input
+const platformBaseUrls: Record<string, string> = {
+    instagram: 'https://instagram.com/',
+    tiktok: 'https://www.tiktok.com/@',
+    twitter: 'https://twitter.com/',
+    github: 'https://github.com/',
+    linkedin: 'https://www.linkedin.com/in/',
+    youtube: 'https://www.youtube.com/@', // Modern handle format
+    soundcloud: 'https://soundcloud.com/',
+    pinterest: 'https://www.pinterest.com/',
+    spotify: 'https://open.spotify.com/user/', // Assuming user profile for "username"
+};
+
 export function SocialLinks({ links, className = '', iconColor, onLinkClick }: SocialLinksProps) {
     if (!links.length) return null;
 
@@ -65,16 +78,36 @@ export function SocialLinks({ links, className = '', iconColor, onLinkClick }: S
                 const Icon = isCustom ? LinkIcon : (iconMap[link.platform] || ExternalLink);
 
                 let formattedUrl = link.url;
+
+                // 1. Email handling
                 if (link.platform === 'email') {
                     if (!formattedUrl.startsWith('mailto:')) {
                         formattedUrl = `mailto:${formattedUrl}`;
                     }
-                } else if (!formattedUrl.startsWith('http') && !formattedUrl.startsWith('mailto:') && !formattedUrl.startsWith('tel:')) {
-                    // Check if it looks like an email
-                    if (formattedUrl.includes('@') && !formattedUrl.includes('/')) {
-                        formattedUrl = `mailto:${formattedUrl}`;
+                }
+                // 2. Phone handling
+                else if (link.platform === 'phone') {
+                    if (!formattedUrl.startsWith('tel:')) {
+                        formattedUrl = `tel:${formattedUrl}`;
+                    }
+                }
+                // 3. Platform username handling (if not a full URL)
+                else if (!formattedUrl.startsWith('http') && !formattedUrl.startsWith('mailto:') && !formattedUrl.startsWith('tel:')) {
+                    const baseUrl = platformBaseUrls[link.platform];
+
+                    if (baseUrl) {
+                        // Strip leading '@' if the user added it, to avoid double @@ (except for custom logic if needed)
+                        // But mostly we just want to cleaner username.
+                        const cleanUsername = formattedUrl.startsWith('@') ? formattedUrl.slice(1) : formattedUrl;
+                        formattedUrl = `${baseUrl}${cleanUsername}`;
                     } else {
-                        formattedUrl = `https://${formattedUrl}`;
+                        // generic fallback for custom links or unknown platforms
+                        // Check if it looks like an email
+                        if (formattedUrl.includes('@') && !formattedUrl.includes('/')) {
+                            formattedUrl = `mailto:${formattedUrl}`;
+                        } else {
+                            formattedUrl = `https://${formattedUrl}`;
+                        }
                     }
                 }
 
