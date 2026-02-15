@@ -64,10 +64,24 @@ export function SocialLinks({ links, className = '', iconColor, onLinkClick }: S
                 const isCustom = link.platform === 'custom';
                 const Icon = isCustom ? LinkIcon : (iconMap[link.platform] || ExternalLink);
 
+                let formattedUrl = link.url;
+                if (link.platform === 'email') {
+                    if (!formattedUrl.startsWith('mailto:')) {
+                        formattedUrl = `mailto:${formattedUrl}`;
+                    }
+                } else if (!formattedUrl.startsWith('http') && !formattedUrl.startsWith('mailto:') && !formattedUrl.startsWith('tel:')) {
+                    // Check if it looks like an email
+                    if (formattedUrl.includes('@') && !formattedUrl.includes('/')) {
+                        formattedUrl = `mailto:${formattedUrl}`;
+                    } else {
+                        formattedUrl = `https://${formattedUrl}`;
+                    }
+                }
+
                 return (
                     <a
                         key={link.id}
-                        href={link.url}
+                        href={formattedUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => onLinkClick?.(link.platform, link.url)}
