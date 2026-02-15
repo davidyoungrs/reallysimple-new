@@ -1,6 +1,10 @@
 {
     "rewrites": [
         {
+            "source": "/api/get-card-by-slug/(.*)",
+            "destination": "/api/get-card-by-slug?slug=$1"
+        },
+        {
             "source": "/api/(.*)",
             "destination": "/api/$1"
         },
