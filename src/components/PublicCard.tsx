@@ -70,7 +70,8 @@ export function PublicCard() {
 
         console.log('Tracking click:', { slug, type, targetInfo });
 
-        fetch('/api/track-click', {
+        // Use log-click to avoid ad-blockers blocking "track" in URL
+        fetch('/api/log-click', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ slug, type, targetInfo }),

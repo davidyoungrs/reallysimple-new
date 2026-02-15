@@ -25,6 +25,7 @@ import {
     AmazonMusic
 } from './BrandIcons';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const iconMap: Record<string, any> = {
     linkedin: Linkedin,
     twitter: Twitter,

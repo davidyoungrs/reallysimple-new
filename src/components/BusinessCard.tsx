@@ -73,38 +73,29 @@ export function BusinessCard({ data, onLinkClick }: BusinessCardProps) {
 
     const handleAddToWallet = async () => {
         if (onLinkClick) onLinkClick('contact', 'wallet');
+
+        if (!data.slug) {
+            alert(t('Please save your card first to generate a wallet pass.'));
+            return;
+        }
+
         setLoading(true);
         try {
-            const emailLink = socialLinks.find(l => l.platform === 'email');
-
-            const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-pass`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-                },
-                body: JSON.stringify({
-                    fullName,
-                    jobTitle,
-                    company,
-                    bio,
-                    email: emailLink ? emailLink.url.replace('mailto:', '') : 'no-email@example.com'
-                })
-            });
+            const response = await fetch(`/api/generate-pass?slug=${data.slug}`);
 
             if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error || 'Failed to generate pass');
+                throw new Error(`Server returned ${response.status} ${response.statusText}`);
             }
 
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', 'wallet-pass.pkpass');
+            link.setAttribute('download', `${data.slug}.pkpass`);
             document.body.appendChild(link);
             link.click();
             link.remove();
+            window.URL.revokeObjectURL(url);
         } catch (error: any) {
             console.error('Error generating pass:', error);
             alert(`Failed to generate Apple Wallet pass: ${error.message}`);

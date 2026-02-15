@@ -40,12 +40,12 @@
 - [x] **Internationalization**
     - [x] Language Selector
 
-## Phase 3: Analytics & Engagement (Current Focus)
+## Phase 3: Analytics & Engagement (Completed)
 - [x] **Click Tracking**
     - [x] Database Schema (`card_clicks`)
     - [x] API Endpoint (`/api/track-click`)
     - [x] Frontend tracking (Social, Contact, Custom links)
-- [/] **Analytics Dashboard**
+- [x] **Analytics Dashboard**
     - [x] Visual Charts (Recharts integration)
     - [x] Metric Cards (Total Views, CTR)
     - [x] Media Impressions tracking
@@ -59,7 +59,7 @@
         - [x] Analytics Dashboard charts for Source/Device
     - [x] **Bug Fix**: Resolving 500 error & view count stagnation
 
-## Phase 4: Bug Fixes & Refinement (Current Focus)
+## Phase 4: Bug Fixes & Refinement (Completed)
 - [x] **Card Deletion Fix**
     - [x] Update schema with `onDelete: 'cascade'`
     - [x] Update `delete-card.ts` to handle related records
@@ -76,8 +76,8 @@
     - [ ] Card Limit enforcement
     - [ ] Subscription Management Dashboard
 
-## Phase 5: Wallet Integration (Future)
-- [ ] **Apple Wallet (.pkpass)**
+## Phase 6: Wallet Integration (Current Focus)
+- [/] **Apple Wallet (.pkpass)**
     - [ ] Pass Certificate generation
     - [ ] Server-side signing (Node.js/Python)
     - [ ] "Add to Apple Wallet" button
@@ -85,7 +85,7 @@
     - [ ] JWT-signed link generation
     - [ ] "Save to Google Pay" button
 
-## Phase 6: Lifecycle & Growth (Future)
+## Phase 7: Lifecycle & Growth (Future)
 - [ ] **Engagement Tools**
     - [ ] Lead Capture Form on cards
     - [ ] "Exchange Contact" feature
@@ -94,14 +94,14 @@
     - [ ] Push Notifications for card updates
     - [ ] Expiration reminders for subscriptions
 
-## Phase 7: Security & Privacy (Future)
+## Phase 8: Security & Privacy (Future)
 - [ ] **API Security**
     - [ ] Rate Limiting (API endpoints, view tracking)
     - [ ] CSRF Protection tokens
     - [ ] Input Sanitization & XSS Prevention
     - [ ] Content Security Policy (CSP) headers
 
-## Phase 8: Policies & Compliance (Current)
+## Phase 9: Policies & Compliance (Current)
 - [ ] **Policy Updates** (Review and refine Privacy, Terms, and Cookies)
     - [ ] Update Privacy Policy
     - [ ] Update Terms and Conditions
