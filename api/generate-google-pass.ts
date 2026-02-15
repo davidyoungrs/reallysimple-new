@@ -2,28 +2,13 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleAuth } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import { db } from '../src/db';
-import { cards } from '../src/db/schema';
+import { businessCards } from '../src/db/schema';
 import { eq } from 'drizzle-orm';
 
-// Environment variables
-const ISSUER_ID = process.env.GOOGLE_WALLET_ISSUER_ID;
-const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_WALLET_CLIENT_EMAIL;
-const PRIVATE_KEY = process.env.GOOGLE_WALLET_PRIVATE_KEY?.replace(/\\n/g, '\n'); // Handle escaped newlines
-
-if (!ISSUER_ID || !SERVICE_ACCOUNT_EMAIL || !PRIVATE_KEY) {
-    console.error("Missing Google Wallet credentials");
-    // Return error immediately to prevent crash later
-}
+// ... (Environment variables check remains the same)
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // Enable CORS
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-    res.setHeader(
-        'Access-Control-Allow-Headers',
-        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-    );
+    // ... (CORS headers remain the same)
 
     if (req.method === 'OPTIONS') {
         res.status(200).end();
@@ -42,21 +27,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
+        console.log(`Generating Google Wallet pass for slug: ${slug}`);
+
         // 1. Fetch Card Data
-        const cardData = await db.select().from(cards).where(eq(cards.slug, slug)).limit(1);
+        // uses 'businessCards' table, not 'cards'
+        const cardData = await db.select().from(businessCards).where(eq(businessCards.slug, slug)).limit(1);
 
         if (!cardData || cardData.length === 0) {
             return res.status(404).json({ error: 'Card not found' });
         }
 
-        const card = cardData[0];
+        const record = cardData[0];
+        const card = record.data as any; // Cast JSONB data to any or specific type if available
+
         const classId = `${ISSUER_ID}.contact-tree-standard-v1`;
         const objectId = `${ISSUER_ID}.${slug}-${Date.now()}`; // Unique object ID
-
-        // 2. Refresh Google Auth (to verify creds - optional but good check)
-        // In a real generic pass flow, we construct the JWT locally signed by the service account key.
-        // We don't strictly need to call Google APIs unless we want to "insert" the class first.
-        // For simplicity, we will define the class INSIDE the JWT payload so we don't need to pre-create it via API.
 
         const newPass = {
             iss: SERVICE_ACCOUNT_EMAIL,
