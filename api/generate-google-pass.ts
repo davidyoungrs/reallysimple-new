@@ -12,6 +12,7 @@ const PRIVATE_KEY = process.env.GOOGLE_WALLET_PRIVATE_KEY?.replace(/\\n/g, '\n')
 
 if (!ISSUER_ID || !SERVICE_ACCOUNT_EMAIL || !PRIVATE_KEY) {
     console.error("Missing Google Wallet credentials");
+    // Return error immediately to prevent crash later
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -27,6 +28,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'OPTIONS') {
         res.status(200).end();
         return;
+    }
+
+    if (!ISSUER_ID || !SERVICE_ACCOUNT_EMAIL || !PRIVATE_KEY) {
+        console.error("Missing Google Wallet credentials");
+        return res.status(500).json({ error: 'Missing server configuration (Google Wallet)' });
     }
 
     const { slug } = req.body;
