@@ -7,15 +7,17 @@ import { verifyToken } from '@clerk/backend';
 //     runtime: 'edge',
 // };
 
-export default async function handler(req: Request) {
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'DELETE' && req.method !== 'POST') {
-        return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
     try {
-        const authHeader = req.headers.get('Authorization');
+        const authHeader = req.headers.authorization;
         if (!authHeader?.startsWith('Bearer ')) {
-            return new Response(JSON.stringify({ error: 'Missing authorization header' }), { status: 401 });
+            return res.status(401).json({ error: 'Missing authorization header' });
         }
 
         const token = authHeader.split(' ')[1];
@@ -28,22 +30,22 @@ export default async function handler(req: Request) {
             });
         } catch (err) {
             console.error('Token verification failed:', err);
-            return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401 });
+            return res.status(401).json({ error: 'Invalid token' });
         }
 
         const authenticatedUserId = verifiedToken.sub;
-        const body = await req.json();
+        const body = req.body;
         const { cardId, userId } = body;
 
         // Ensure the userId in body matches the authenticated user
         if (userId && userId !== authenticatedUserId) {
-            return new Response(JSON.stringify({ error: 'Unauthorized user mismatch' }), { status: 403 });
+            return res.status(403).json({ error: 'Unauthorized user mismatch' });
         }
 
         const effectiveUserId = authenticatedUserId;
 
         if (!cardId) {
-            return new Response(JSON.stringify({ error: 'Missing cardId' }), { status: 400 });
+            return res.status(400).json({ error: 'Missing cardId' });
         }
 
         console.log('Attempting to delete card:', cardId, 'for user:', effectiveUserId);
@@ -60,7 +62,7 @@ export default async function handler(req: Request) {
 
         if (existingCards.length === 0) {
             console.log('Card not found or unauthorized');
-            return new Response(JSON.stringify({ error: 'Card not found or unauthorized' }), { status: 404 });
+            return res.status(404).json({ error: 'Card not found or unauthorized' });
         }
 
         console.log('Card found, deleting associated analytics data...');
@@ -86,15 +88,10 @@ export default async function handler(req: Request) {
 
         console.log('Card deleted successfully');
 
-        return new Response(JSON.stringify({ success: true, message: 'Card deleted successfully' }), {
-            status: 200,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        return res.status(200).json({ success: true, message: 'Card deleted successfully' });
 
     } catch (error: any) {
         console.error('Error deleting card:', error);
-        return new Response(JSON.stringify({ error: 'Internal server error', details: error?.message || 'Unknown error' }), { status: 500 });
+        return res.status(500).json({ error: 'Internal server error', details: error?.message || 'Unknown error' });
     }
 }

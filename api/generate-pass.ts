@@ -8,23 +8,21 @@ import path from 'path';
 // Load certs from local file system (in a real app these would be secrets/env vars)
 const CERT_DIR = path.join(process.cwd(), 'certs');
 
-export default async function handler(req: any, res: any) {
-    // Handling Vercel/Next.js style API requests if possible, otherwise standard Request/Response
-    // But since this is likely a Vite dev server, we might need a specific plugin or proxy.
-    // However, the error '404' suggests the file isn't being served as an endpoint.
-    // In a typical Vite SPA, 'api/' files aren't automatically server functions unless configured.
-    // Assuming the user has a setup for this (since get-analytics.ts exists).
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-    // Check if it's a standard Request object (Web Standard) or Node request
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+    // Check if it's a standard Request object or Node request
     if (req.method !== 'GET') {
-        return new Response('Method not allowed', { status: 405 });
+        return res.status(405).send('Method not allowed');
     }
 
-    const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-    const slug = url.searchParams.get('slug');
+    const host = req.headers.host || 'localhost';
+    const protocol = req.headers['x-forwarded-proto'] || 'http';
+    const url = new URL(req.url || '', `${protocol}://${host}`);
+    const slug = url.searchParams.get('slug') || req.query.slug as string;
 
     if (!slug) {
-        return new Response('Missing slug', { status: 400 });
+        return res.status(400).send('Missing slug');
     }
 
     try {
@@ -36,7 +34,7 @@ export default async function handler(req: any, res: any) {
             .limit(1);
 
         if (cards.length === 0) {
-            return new Response('Card not found', { status: 404 });
+            return res.status(404).send('Card not found');
         }
 
         const card = cards[0];
@@ -113,7 +111,7 @@ export default async function handler(req: any, res: any) {
         }
 
         // Add QR Code
-        const publicUrl = `${url.origin}/card/${slug}?src=wallet`;
+        const publicUrl = `${protocol}://${host}/card/${slug}?src=wallet`;
         pass.setBarcodes({
             format: 'PKBarcodeFormatQR',
             message: publicUrl,
@@ -126,16 +124,12 @@ export default async function handler(req: any, res: any) {
         const buffer = pass.getAsBuffer();
         console.log('Buffer generated. Size:', buffer.length);
 
-        return new Response(buffer as any, {
-            status: 200,
-            headers: {
-                'Content-Type': 'application/vnd.apple.pkpass',
-                'Content-Disposition': `attachment; filename=${slug}.pkpass`,
-            },
-        });
+        res.setHeader('Content-Type', 'application/vnd.apple.pkpass');
+        res.setHeader('Content-Disposition', `attachment; filename=${slug}.pkpass`);
+        res.status(200).send(buffer);
 
     } catch (error: any) {
         console.error('Pass Generation Error:', error);
-        return new Response(`Error generating pass: ${error.message}`, { status: 500 });
+        return res.status(500).send(`Error generating pass: ${error.message}`);
     }
 }

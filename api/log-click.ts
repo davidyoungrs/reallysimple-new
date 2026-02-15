@@ -2,19 +2,18 @@ import { db } from '../src/db/index.js';
 import { businessCards, cardClicks } from '../src/db/schema.js';
 import { eq } from 'drizzle-orm';
 
-export default async function handler(request: Request) {
-    if (request.method !== 'POST') {
-        return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
     try {
-        const { slug, type, targetInfo } = await request.json();
+        const { slug, type, targetInfo } = req.body;
 
         if (!slug || !type) {
-            return new Response(JSON.stringify({ error: 'Missing required fields' }), {
-                status: 400,
-                headers: { 'Content-Type': 'application/json' },
-            });
+            return res.status(400).json({ error: 'Missing required fields' });
         }
 
         // Find card ID from slug
@@ -25,14 +24,11 @@ export default async function handler(request: Request) {
 
         if (!card.length) {
             console.error(`Card not found for slug: ${slug}`);
-            return new Response(JSON.stringify({ error: 'Card not found' }), {
-                status: 404,
-                headers: { 'Content-Type': 'application/json' },
-            });
+            return res.status(404).json({ error: 'Card not found' });
         }
 
         const cardId = card[0].id;
-        const userAgent = request.headers.get('user-agent') || undefined;
+        const userAgent = req.headers['user-agent'] as string || undefined;
 
         await db.insert(cardClicks).values({
             cardId,
@@ -41,16 +37,10 @@ export default async function handler(request: Request) {
             userAgent,
         });
 
-        return new Response(JSON.stringify({ success: true }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-        });
+        return res.status(200).json({ success: true });
 
     } catch (error) {
         console.error('Error tracking click:', error);
-        return new Response(JSON.stringify({ error: 'Internal server error' }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' },
-        });
+        return res.status(500).json({ error: 'Internal server error' });
     }
 }
