@@ -17,6 +17,7 @@ export function ShareMenu({ cardSlug, data }: ShareMenuProps) {
     const [copied, setCopied] = useState(false);
     const [showSignatureModal, setShowSignatureModal] = useState(false);
     const [loadingWallet, setLoadingWallet] = useState(false);
+    const [loadingGoogle, setLoadingGoogle] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
     const publicUrl = `${window.location.origin}/card/${cardSlug}`;
