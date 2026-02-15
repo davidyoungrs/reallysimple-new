@@ -26,6 +26,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
+        console.log(`[PassGen] verify requests for slug: ${slug}`);
+
         // 1. Fetch Card Data
         const cards = await db
             .select()
@@ -34,27 +36,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .limit(1);
 
         if (cards.length === 0) {
+            console.error('[PassGen] Card not found');
             return res.status(404).send('Card not found');
         }
 
         const card = cards[0];
         const data = card.data as any;
 
-        // 2. Create Pass
-        // PRIORITY: Check Environment Variables first (Production/Cloudflare)
-        // FALLBACK: Read from local filesystem (Local Dev)
+        // 2. Prepare Certs & IDs
+        const teamId = process.env.APPLE_TEAM_ID;
+        const passTypeId = process.env.APPLE_PASS_TYPE_ID;
+
+        if (!teamId || !passTypeId) {
+            console.error('[PassGen] Missing APPLE_TEAM_ID or APPLE_PASS_TYPE_ID');
+            return res.status(500).json({ error: 'Server configuration error: Missing Apple IDs' });
+        }
 
         // Helper to get cert content
         const getCertContent = (envVar: string, fileName: string) => {
             if (process.env[envVar]) {
+                console.log(`[PassGen] Loaded ${fileName} from Env Var`);
                 // Handle potential escaped newlines in env vars
                 return process.env[envVar]!.replace(/\\n/g, '\n');
             }
             // Fallback to local file
-            if (fs.existsSync(path.join(CERT_DIR, fileName))) {
-                return fs.readFileSync(path.join(CERT_DIR, fileName), 'utf8');
+            const localPath = path.join(CERT_DIR, fileName);
+            if (fs.existsSync(localPath)) {
+                console.log(`[PassGen] Loaded ${fileName} from local file: ${localPath}`);
+                return fs.readFileSync(localPath, 'utf8');
             }
-            throw new Error(`Missing certificate: ${fileName} or env var ${envVar}`);
+            console.error(`[PassGen] Missing certificate: ${fileName}`);
+            return null;
         };
 
         const certs = {
@@ -63,18 +75,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             signerKey: getCertContent('WALLET_SIGNER_KEY', 'signerKey.pem'),
         };
 
+        if (!certs.wwdr || !certs.signerCert || !certs.signerKey) {
+            return res.status(500).json({ error: 'Missing certificates' });
+        }
+
+        // Verify model.pass path
+        const modelPath = path.join(process.cwd(), 'certs', 'model.pass');
+        if (!fs.existsSync(modelPath)) {
+            console.error(`[PassGen] model.pass not found at: ${modelPath}`);
+            // List contents of current dir to help debug
+            console.log('[PassGen] CWD contents:', fs.readdirSync(process.cwd()));
+            if (fs.existsSync(path.join(process.cwd(), 'certs'))) {
+                console.log('[PassGen] certs/ contents:', fs.readdirSync(path.join(process.cwd(), 'certs')));
+            }
+            return res.status(500).json({ error: `Server configuration error: model.pass not found at ${modelPath}` });
+        }
+
+        console.log(`[PassGen] found model.pass at ${modelPath}`);
+
         const pass = await PKPass.from(
             {
-                model: path.join(process.cwd(), 'certs', 'model.pass'),
-                certificates: certs,
+                model: modelPath,
+                certificates: certs as any, // Cast to avoid strict type issues if checks passed
             },
             {
                 serialNumber: card.uid,
                 description: 'Digital Business Card',
-                logoText: 'Really Simple Apps',
-                organizationName: 'Really Simple Apps',
-                passTypeIdentifier: 'pass.com.reallysimpleapps.card',
-                teamIdentifier: '8V4W89YADM',
+                logoText: data.company || 'Digital Card',
+                organizationName: data.company || 'Contact Tree',
+                passTypeIdentifier: passTypeId,
+                teamIdentifier: teamId,
                 backgroundColor: 'rgb(255,255,255)',
                 foregroundColor: 'rgb(0,0,0)',
                 labelColor: 'rgb(0,0,0)',
@@ -82,11 +112,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         );
 
         pass.type = 'storeCard';
-
-        // Add Fields - access the array directly and push? 
-        // Checking library source/types: it seems strictly typed or array.
-        // pass.primaryFields is an array in some versions.
-        // Let's safe check and push.
 
         pass.primaryFields.push({
             key: 'name',
@@ -118,8 +143,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             messageEncoding: 'utf-8',
         });
 
-        // 3. Generate Stream
-        // 5. Generate and Send
         console.log('Generating pass buffer...');
         const buffer = pass.getAsBuffer();
         console.log('Buffer generated. Size:', buffer.length);
@@ -130,6 +153,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     } catch (error: any) {
         console.error('Pass Generation Error:', error);
-        return res.status(500).send(`Error generating pass: ${error.message}`);
+        // Include stack trace only if safe (usually not in prod, but needed for debugging now)
+        return res.status(500).json({
+            error: 'Failed to generate pass',
+            details: error.message,
+            stack: error.stack
+        });
     }
 }
