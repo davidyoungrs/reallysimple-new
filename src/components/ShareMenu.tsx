@@ -1,28 +1,49 @@
-import { useState } from 'react';
-import { Share2, Copy, Download, ExternalLink, Check, Mail } from 'lucide-react';
-import { downloadQRCodeAsSVG, downloadQRCodeAsPNG } from '../utils/qrDownload';
+import { useState, useRef, useEffect } from 'react';
+import { Share2, Link as LinkIcon, Download, Mail, X, Copy, Check, MessageCircle, Wallet, Loader2 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useTranslation } from 'react-i18next';
 import type { CardData } from '../types';
+import { downloadQRCodeAsSVG, downloadQRCodeAsPNG } from '../utils/qrDownload';
 import { EmailSignatureModal } from './EmailSignatureModal';
+import { downloadVCard } from '../utils/vcard'; // New import
 
 interface ShareMenuProps {
     cardSlug: string;
-    data: CardData;
+    data: CardData; // Changed from any to CardData
 }
 
 export function ShareMenu({ cardSlug, data }: ShareMenuProps) {
     const { t } = useTranslation();
-    const [showMenu, setShowMenu] = useState(false);
-    const [copied, setCopied] = useState(false);
+    const [showMenu, setShowMenu] = useState(false); // Renamed from isOpen
+    const [copied, setCopied] = useState(false); // Renamed from copyStatus
     const [showSignatureModal, setShowSignatureModal] = useState(false);
+    const [loadingWallet, setLoadingWallet] = useState(false); // New state
+    const menuRef = useRef<HTMLDivElement>(null); // New ref
 
-    const publicUrl = `${window.location.origin}/card/${cardSlug}`;
+    const publicUrl = `${window.location.origin}/card/${cardSlug}`; // Renamed from cardUrl
     const qrUrl = `${publicUrl}?src=qr`;
     const filename = cardSlug || 'business-card';
 
+    // New useEffect for click outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setShowMenu(false);
+            }
+        };
+
+        if (showMenu) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showMenu]);
+
     const handleCopyLink = async () => {
         try {
-            await navigator.clipboard.writeText(publicUrl);
+            await navigator.clipboard.writeText(publicUrl); // Using publicUrl
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch (error) {
@@ -58,12 +79,42 @@ export function ShareMenu({ cardSlug, data }: ShareMenuProps) {
         setShowMenu(false);
     };
 
+    // New functions from the "Code Edit" block
+    const handleEmailShare = () => {
+        const subject = encodeURIComponent(`${data.name || 'Digital Business Card'}`);
+        const body = encodeURIComponent(`Here is my digital business card:\n\n${publicUrl}`);
+        window.open(`mailto:?subject=${subject}&body=${body}`);
+        setShowMenu(false);
+    };
+
+    const handleWhatsAppShare = () => {
+        const text = encodeURIComponent(`Here is my digital business card: ${publicUrl}`);
+        window.open(`https://wa.me/?text=${text}`);
+        setShowMenu(false);
+    };
+
+    const handleDownloadVCard = () => {
+        downloadVCard(data);
+        setShowMenu(false);
+    };
+
     const handleAddToWallet = async () => {
+        setLoadingWallet(true); // Set loading state
         try {
             const response = await fetch(`/api/generate-pass?slug=${cardSlug}`);
 
             if (!response.ok) {
-                throw new Error(`Server returned ${response.status} ${response.statusText}`);
+                let errorMessage = `Server returned ${response.status} ${response.statusText}`;
+                try {
+                    const errorData = await response.json();
+                    if (errorData.error) {
+                        errorMessage = errorData.error;
+                        if (errorData.details) errorMessage += `: ${errorData.details}`;
+                    }
+                } catch (e) {
+                    // If response is not JSON, use default error message
+                }
+                throw new Error(errorMessage);
             }
 
             const blob = await response.blob();
@@ -127,6 +178,27 @@ export function ShareMenu({ cardSlug, data }: ShareMenuProps) {
                         >
                             <Mail className="w-4 h-4 text-gray-600" />
                             <span>{t('Email Signature')}</span>
+                        </button>
+
+                        <div className="border-t border-gray-200 my-1" />
+
+                        <button
+                            onClick={handleAddToWallet}
+                            disabled={loadingWallet}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors text-gray-700 disabled:opacity-50"
+                        >
+                            <div className="bg-black text-white p-1.5 rounded-md">
+                                {loadingWallet ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wallet className="w-4 h-4" />}
+                            </div>
+                            <span className="font-medium">{loadingWallet ? t('Creating Pass...') : t('Add to Apple Wallet')}</span>
+                        </button>
+
+                        <button
+                            onClick={handleDownloadVCard}
+                            className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-3 text-sm"
+                        >
+                            <Download className="w-4 h-4 text-gray-600" />
+                            <span>{t('Download vCard')}</span>
                         </button>
 
                         <div className="border-t border-gray-200 my-1" />
