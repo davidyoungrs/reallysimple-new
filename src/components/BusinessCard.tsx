@@ -84,7 +84,17 @@ export function BusinessCard({ data, onLinkClick }: BusinessCardProps) {
             const response = await fetch(`/api/generate-pass?slug=${data.slug}`);
 
             if (!response.ok) {
-                throw new Error(`Server returned ${response.status} ${response.statusText}`);
+                let errorMessage = `Server returned ${response.status} ${response.statusText}`;
+                try {
+                    const errorData = await response.json();
+                    if (errorData.error) {
+                        errorMessage = errorData.error;
+                        if (errorData.details) errorMessage += `: ${errorData.details}`;
+                    }
+                } catch (e) {
+                    // unexpected content type, use status text
+                }
+                throw new Error(errorMessage);
             }
 
             const blob = await response.blob();
