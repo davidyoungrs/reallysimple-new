@@ -1,5 +1,14 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
-    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString(), message: 'Backend is active' });
+export default function handler(req: Request) {
+    return new Response(JSON.stringify({
+        status: 'ok',
+        time: new Date().toISOString(),
+        environment: process.env.VERCEL ? 'vercel' : 'local'
+    }), {
+        status: 200,
+        headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store'
+        }
+    });
 }
