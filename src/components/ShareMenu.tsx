@@ -207,7 +207,7 @@ export function ShareMenu({ cardSlug, data }: ShareMenuProps) {
                             <div className="bg-black text-white p-1.5 rounded-md">
                                 {loadingWallet ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wallet className="w-4 h-4" />}
                             </div>
-                            <span className="font-medium">{loadingWallet ? t('Creating Pass...') : t('Add to Apple Wallet')}</span>
+                            <span className="font-medium">{loadingWallet ? t('Creating...') : t('Add to Apple Wallet')}</span>
                         </button>
 
                         <button
