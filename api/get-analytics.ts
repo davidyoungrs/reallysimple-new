@@ -2,21 +2,19 @@ import { db } from '../src/db/index.js';
 import { businessCards, cardViews, cardClicks } from '../src/db/schema.js';
 import { eq, sql, and, gte, lte, desc } from 'drizzle-orm';
 
-export default async function handler(request: Request) {
-    if (request.method !== 'GET') {
-        return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+    if (req.method !== 'GET') {
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
     try {
-        const url = new URL(request.url);
-        const slug = url.searchParams.get('slug');
-        const cardIdParam = url.searchParams.get('cardId');
+        const slug = req.query.slug as string;
+        const cardIdParam = req.query.cardId as string;
 
         if (!slug && !cardIdParam) {
-            return new Response(JSON.stringify({ error: 'Missing cardId or slug' }), {
-                status: 400,
-                headers: { 'Content-Type': 'application/json' },
-            });
+            return res.status(400).json({ error: 'Missing cardId or slug' });
         }
 
         let cardId: number;
@@ -28,27 +26,21 @@ export default async function handler(request: Request) {
                 .limit(1);
 
             if (!card.length) {
-                return new Response(JSON.stringify({ error: 'Card not found' }), {
-                    status: 404,
-                    headers: { 'Content-Type': 'application/json' },
-                });
+                return res.status(404).json({ error: 'Card not found' });
             }
             cardId = card[0].id;
         } else {
             cardId = parseInt(cardIdParam!);
             if (isNaN(cardId)) {
-                return new Response(JSON.stringify({ error: 'Invalid cardId format' }), {
-                    status: 400,
-                    headers: { 'Content-Type': 'application/json' },
-                });
+                return res.status(400).json({ error: 'Invalid cardId format' });
             }
         }
 
         let startDate: Date;
         let endDate: Date;
 
-        const startDateParam = url.searchParams.get('startDate');
-        const endDateParam = url.searchParams.get('endDate');
+        const startDateParam = req.query.startDate as string;
+        const endDateParam = req.query.endDate as string;
 
         if (startDateParam && endDateParam) {
             startDate = new Date(startDateParam);
@@ -115,10 +107,6 @@ export default async function handler(request: Request) {
         const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        // Limit daily stats generation to avoid huge loops if someone requests a large range
-        // For very large ranges, we might want to group by month, but for now stick to daily up to reasonable limits (e.g. 90 days)
-        // or just iterate 
-
         for (let i = 0; i <= diffDays; i++) {
             const d = new Date(startDate);
             d.setDate(d.getDate() + i);
@@ -182,7 +170,7 @@ export default async function handler(request: Request) {
             ))
             .groupBy(cardViews.source);
 
-        return new Response(JSON.stringify({
+        return res.status(200).json({
             totalViews,
             totalClicks,
             ctr: parseFloat(ctr.toFixed(2)),
@@ -206,20 +194,14 @@ export default async function handler(request: Request) {
                 source: item.source || 'direct',
                 count: Number(item.count)
             }))
-        }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
         });
 
     } catch (error: any) {
         console.error('Error fetching analytics:', error);
-        return new Response(JSON.stringify({
+        return res.status(500).json({
             error: 'Internal server error',
             details: error?.message || 'Unknown error',
             stack: error?.stack
-        }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' },
         });
     }
 }

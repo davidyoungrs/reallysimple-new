@@ -6,17 +6,18 @@ import { eq } from 'drizzle-orm';
 //     runtime: 'edge',
 // };
 
-export default async function handler(req: Request) {
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') {
-        return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
     try {
-        const body = await req.json();
-        const { slug } = body;
+        const { slug } = req.body;
 
         if (!slug) {
-            return new Response(JSON.stringify({ error: 'Missing slug' }), { status: 400 });
+            return res.status(400).json({ error: 'Missing slug' });
         }
 
         // Find card by slug
@@ -27,15 +28,16 @@ export default async function handler(req: Request) {
             .limit(1);
 
         if (cards.length === 0) {
-            return new Response(JSON.stringify({ error: 'Card not found' }), { status: 404 });
+            return res.status(404).json({ error: 'Card not found' });
         }
 
         const cardId = cards[0].id;
-        const { source = 'direct' } = body;
+        const { source = 'direct' } = req.body;
 
         // Extract referrer and user agent from headers
-        const referrer = req.headers.get('referer') || req.headers.get('referrer') || null;
-        const userAgent = req.headers.get('user-agent') || '';
+        // VercelRequest headers are IncomingHttpHeaders (keys are lowercase)
+        const referrer = (req.headers['referer'] || req.headers['referrer']) as string || null;
+        const userAgent = req.headers['user-agent'] as string || '';
 
         // Determine device type from user agent
         let deviceType = 'desktop';
@@ -46,12 +48,15 @@ export default async function handler(req: Request) {
         }
 
         // Extract geolocation data from Vercel headers
-        const city = req.headers.get('x-vercel-ip-city') || null;
-        const region = req.headers.get('x-vercel-ip-country-region') || null;
-        const country = req.headers.get('x-vercel-ip-country') || null;
-        const latitude = req.headers.get('x-vercel-ip-latitude') || null;
-        const longitude = req.headers.get('x-vercel-ip-longitude') || null;
-        const ipAddress = req.headers.get('x-real-ip') || req.headers.get('x-forwarded-for')?.split(',')[0] || null;
+        const city = (req.headers['x-vercel-ip-city'] as string) || null;
+        const region = (req.headers['x-vercel-ip-country-region'] as string) || null;
+        const country = (req.headers['x-vercel-ip-country'] as string) || null;
+        const latitude = (req.headers['x-vercel-ip-latitude'] as string) || null;
+        const longitude = (req.headers['x-vercel-ip-longitude'] as string) || null;
+
+        // Handle potentially multiple IPs in x-forwarded-for
+        const forwardedFor = req.headers['x-forwarded-for'] as string;
+        const ipAddress = (req.headers['x-real-ip'] as string) || (forwardedFor ? forwardedFor.split(',')[0] : null);
 
         // Insert view record
         await db.insert(cardViews).values({
@@ -68,17 +73,11 @@ export default async function handler(req: Request) {
             source,
         });
 
-        return new Response(JSON.stringify({ success: true }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-        });
+        return res.status(200).json({ success: true });
 
     } catch (error: any) {
         console.error('Error tracking view:', error);
         // Don't fail the request if analytics fails
-        return new Response(JSON.stringify({ success: false, error: error?.message || 'Unknown error' }), {
-            status: 200,  // Return 200 so it doesn't block the page
-            headers: { 'Content-Type': 'application/json' },
-        });
+        return res.status(200).json({ success: false, error: error?.message || 'Unknown error' });
     }
 }
