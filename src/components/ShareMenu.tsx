@@ -239,7 +239,6 @@ export function ShareMenu({ cardSlug, data }: ShareMenuProps) {
                         <div className="border-t border-gray-200 my-1" />
 
                         <button
-                            <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 e.preventDefault();
