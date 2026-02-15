@@ -12,5 +12,10 @@
             "source": "/(.*)",
             "destination": "/index.html"
         }
-    ]
+    ],
+    "functions": {
+        "api/generate-pass.ts": {
+            "includeFiles": "certs/model.pass/**"
+        }
+    }
 }
