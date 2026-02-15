@@ -1,14 +1,9 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-export default function handler(req: Request) {
-    return new Response(JSON.stringify({
+export default function handler(req: VercelRequest, res: VercelResponse) {
+    res.status(200).json({
         status: 'ok',
         time: new Date().toISOString(),
         environment: process.env.VERCEL ? 'vercel' : 'local'
-    }), {
-        status: 200,
-        headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-store'
-        }
     });
 }
