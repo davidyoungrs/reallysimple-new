@@ -43,16 +43,28 @@ export default async function handler(req: any, res: any) {
         const data = card.data as any;
 
         // 2. Create Pass
-        // MOCK KEYS: Validating these will fail on a real device without real certs
-        // We use placeholders to demonstrate the flow.
+        // PRIORITY: Check Environment Variables first (Production/Cloudflare)
+        // FALLBACK: Read from local filesystem (Local Dev)
 
-        const certs = {
-            wwdr: fs.readFileSync(path.join(CERT_DIR, 'wwdr.pem'), 'utf8'),
-            signerCert: fs.readFileSync(path.join(CERT_DIR, 'signerCert.pem'), 'utf8'),
-            signerKey: fs.readFileSync(path.join(CERT_DIR, 'signerKey.pem'), 'utf8'),
+        // Helper to get cert content
+        const getCertContent = (envVar: string, fileName: string) => {
+            if (process.env[envVar]) {
+                // Handle potential escaped newlines in env vars
+                return process.env[envVar]!.replace(/\\n/g, '\n');
+            }
+            // Fallback to local file
+            if (fs.existsSync(path.join(CERT_DIR, fileName))) {
+                return fs.readFileSync(path.join(CERT_DIR, fileName), 'utf8');
+            }
+            throw new Error(`Missing certificate: ${fileName} or env var ${envVar}`);
         };
 
-        // Fix for 'buffer' type error: passkit-generator expects specific structure
+        const certs = {
+            wwdr: getCertContent('WALLET_WWDR_CERT', 'wwdr.pem'),
+            signerCert: getCertContent('WALLET_SIGNER_CERT', 'signerCert.pem'),
+            signerKey: getCertContent('WALLET_SIGNER_KEY', 'signerKey.pem'),
+        };
+
         const pass = await PKPass.from(
             {
                 model: path.join(process.cwd(), 'certs', 'model.pass'),
