@@ -34,23 +34,13 @@ export default defineConfig({
                 // Invalidate cache to allow hot reloading of API files
                 const mod = await server.ssrLoadModule(filePath);
 
-                // Create a standard Request object
-                const webRequest = new Request(url.toString(), {
-                  method: req.method,
-                  headers: req.headers as Record<string, string>,
-                  body: (req.method === 'POST' || req.method === 'PUT') ? await readBody(req) : undefined
-                });
-
-                const response = await mod.default(webRequest);
-
-                res.statusCode = response.status;
-                response.headers.forEach((val: string, key: string) => res.setHeader(key, val));
-
-                if (response.body) {
-                  const buffer = await response.arrayBuffer();
-                  res.write(Buffer.from(buffer));
+                // Execute the handler with Node.js native req/res (Vercel style)
+                try {
+                  await mod.default(req, res);
+                } catch (err) {
+                  console.error('API execution error:', err);
+                  throw err;
                 }
-                res.end();
                 return;
               }
             } catch (error: unknown) {
@@ -71,12 +61,3 @@ export default defineConfig({
   ],
 })
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function readBody(req: any): Promise<string> {
-  return new Promise((resolve, reject) => {
-    let body = '';
-    req.on('data', (chunk: any) => body += chunk);
-    req.on('end', () => resolve(body));
-    req.on('error', reject);
-  });
-}
