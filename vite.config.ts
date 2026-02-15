@@ -31,6 +31,37 @@ export default defineConfig({
               const filePath = path.join(process.cwd(), 'api', `${filename}.ts`);
 
               if (fs.existsSync(filePath)) {
+                // Body parsing for JSON
+                if (req.method === 'POST' || req.method === 'PUT') {
+                  const buffers = [];
+                  for await (const chunk of req) {
+                    buffers.push(chunk);
+                  }
+                  const data = Buffer.concat(buffers).toString();
+                  if (data) {
+                    try {
+                      (req as any).body = JSON.parse(data);
+                    } catch (e) {
+                      console.error('Failed to parse body', e);
+                      (req as any).body = {};
+                    }
+                  } else {
+                    (req as any).body = {};
+                  }
+                }
+
+                // Polyfill res.status and res.json for Vercel-like API
+                (res as any).status = (statusCode: number) => {
+                  res.statusCode = statusCode;
+                  return res;
+                };
+
+                (res as any).json = (data: any) => {
+                  res.setHeader('Content-Type', 'application/json');
+                  res.end(JSON.stringify(data));
+                  return res;
+                };
+
                 // Invalidate cache to allow hot reloading of API files
                 const mod = await server.ssrLoadModule(filePath);
 
