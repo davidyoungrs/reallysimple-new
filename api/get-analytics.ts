@@ -36,6 +36,12 @@ export default async function handler(request: Request) {
             cardId = card[0].id;
         } else {
             cardId = parseInt(cardIdParam!);
+            if (isNaN(cardId)) {
+                return new Response(JSON.stringify({ error: 'Invalid cardId format' }), {
+                    status: 400,
+                    headers: { 'Content-Type': 'application/json' },
+                });
+            }
         }
 
         let startDate: Date;
@@ -205,9 +211,13 @@ export default async function handler(request: Request) {
             headers: { 'Content-Type': 'application/json' },
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error fetching analytics:', error);
-        return new Response(JSON.stringify({ error: 'Internal server error' }), {
+        return new Response(JSON.stringify({
+            error: 'Internal server error',
+            details: error?.message || 'Unknown error',
+            stack: error?.stack
+        }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' },
         });

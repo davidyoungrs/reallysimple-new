@@ -68,6 +68,20 @@ export const LandingPage = () => {
                                 {t('View Demo')}
                             </Link>
                         </div>
+
+                        {/* Hero Image */}
+                        <div className="mt-16 sm:mt-24 relative max-w-6xl mx-auto px-4 animate-in fade-in zoom-in duration-1000 slide-in-from-bottom-8">
+                            <div className="relative group">
+                                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+                                <div className="relative bg-white rounded-[2rem] overflow-hidden shadow-2xl border border-gray-100">
+                                    <img
+                                        src="/hero-home.png"
+                                        alt="Really Simple Apps Digital Card Preview"
+                                        className="w-full h-auto object-cover transform transition duration-700 hover:scale-[1.02]"
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
