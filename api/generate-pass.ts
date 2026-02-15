@@ -135,6 +135,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
+        // --- Back Fields (Metadata & Links) ---
+
+        // 1. Link to the digital card itself
+        const publicCardUrl = `${protocol}://${host}/card/${slug}`;
+        pass.backFields.push({
+            key: 'card-url',
+            label: 'My Digital Card',
+            value: publicCardUrl,
+        });
+
+        // 2. Phone Numbers
+        if (data.phoneNumbers && Array.isArray(data.phoneNumbers)) {
+            data.phoneNumbers.forEach((phone: any, index: number) => {
+                pass.backFields.push({
+                    key: `phone-${index}`,
+                    label: phone.label || 'Phone',
+                    value: phone.number,
+                });
+            });
+        }
+
+        // 3. Email & Social Links
+        if (data.socialLinks && Array.isArray(data.socialLinks)) {
+            data.socialLinks.forEach((link: any, index: number) => {
+                let label = link.label || link.platform;
+                let value = link.url;
+
+                // Capitalize label
+                label = label.charAt(0).toUpperCase() + label.slice(1);
+
+                // Format value for display if possible (e.g. mailto: removal)
+                if (link.platform === 'email') {
+                    value = value.replace('mailto:', '');
+                }
+
+                pass.backFields.push({
+                    key: `social-${index}`,
+                    label: label,
+                    value: value,
+                });
+            });
+        }
+
         // Add QR Code
         const publicUrl = `${protocol}://${host}/card/${slug}?src=wallet`;
         pass.setBarcodes({
