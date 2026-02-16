@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleAuth } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
-import { db } from '../src/db';
-import { businessCards } from '../src/db/schema';
+import { db } from '../src/db/index.js';
+import { businessCards } from '../src/db/schema.js';
 import { eq } from 'drizzle-orm';
 
 // ... (Environment variables check remains the same)
