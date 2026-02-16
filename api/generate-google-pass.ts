@@ -29,11 +29,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
         console.log(`Generating Google Wallet pass for slug: ${slug}`);
 
-        // 1. Fetch Card Data
-        // uses 'businessCards' table, not 'cards'
-        const cardData = await db.select().from(businessCards).where(eq(businessCards.slug, slug)).limit(1);
+        let cardData;
+        try {
+            // 1. Fetch Card Data
+            // uses 'businessCards' table, not 'cards'
+            cardData = await db.select().from(businessCards).where(eq(businessCards.slug, slug)).limit(1);
+        } catch (dbError: any) {
+            console.error('Database error fetching card:', dbError);
+            return res.status(500).json({ error: 'Database connection failed', details: dbError.message });
+        }
 
         if (!cardData || cardData.length === 0) {
+            console.error(`Card not found for slug: ${slug}`);
             return res.status(404).json({ error: 'Card not found' });
         }
 
@@ -171,7 +178,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ saveUrl });
 
     } catch (error: any) {
-        console.error('Error generating Google Wallet pass:', error);
-        return res.status(500).json({ error: 'Failed to generate pass', details: error.message });
+        console.error('Error in generate-google-pass handler:', error);
+        // Ensure we always return JSON, even for unknown errors
+        if (!res.headersSent) {
+            return res.status(500).json({ error: 'Internal Server Error', details: error.message });
+        }
     }
 }
